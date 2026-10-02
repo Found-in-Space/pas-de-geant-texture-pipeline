@@ -18,6 +18,29 @@ All reported properties are admission expectations, not yet verified facts.
 Capture the actual bytes, checksum, HTTP metadata, and complete `gdalinfo -json`
 before making the source contract authoritative.
 
+The candidate acquisition specification is
+[`sources/lroc-wac-global-morphology-100m.toml`](sources/lroc-wac-global-morphology-100m.toml).
+It records the public USGS URL and reported properties without presenting them
+as verified expectations. A local admission run is deliberately two-stage:
+
+```console
+UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures download \
+  projects/moon/lroc-wac-global-100m/sources/lroc-wac-global-morphology-100m.toml \
+  --source-root "$RUN_ROOT/source"
+
+UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures inspect-source \
+  projects/moon/lroc-wac-global-100m/sources/lroc-wac-global-morphology-100m.toml \
+  --source-root "$RUN_ROOT/source" \
+  --evidence-root "$RUN_ROOT/evidence"
+```
+
+`download` resumes through a hidden partial file, verifies any admitted size
+and checksum, and promotes the payload atomically. For this candidate it records
+the discovered SHA-256 and byte size without claiming that they are reviewed.
+`inspect-source` records the full GDAL JSON plus normalized contract fields.
+Review both generated records before adding `[expected]`, a reviewed source CRS
+resource, and changing the specification status to `admitted`.
+
 ## Planned output
 
 | Property | Planned value |

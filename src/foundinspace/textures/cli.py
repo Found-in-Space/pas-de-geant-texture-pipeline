@@ -1,0 +1,214 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+import click
+
+from .acquisition import AcquisitionError, download_source
+from .processing import (
+    ProcessingError,
+    build_base,
+    build_levels,
+    inspect_source,
+    preflight,
+)
+from .project import load_acquisition, load_project
+from .toolchain import ToolError
+
+
+def _emit(value: Any) -> None:
+    click.echo(json.dumps(value, indent=2, sort_keys=True))
+
+
+def _command_errors(function):
+    def wrapped(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except (
+            AcquisitionError,
+            ProcessingError,
+            ToolError,
+            ValueError,
+            OSError,
+        ) as exc:
+            raise click.ClickException(str(exc)) from exc
+
+    wrapped.__name__ = function.__name__
+    wrapped.__doc__ = function.__doc__
+    return wrapped
+
+
+@click.group()
+@click.version_option(package_name="found-in-space-pas-de-geant-texture-pipeline")
+def cli() -> None:
+    """Build controlled planetary display-texture products."""
+
+
+@cli.command("validate-project")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@_command_errors
+def validate_project_command(project_path: Path) -> None:
+    """Parse and validate a versioned texture project."""
+    project = load_project(project_path)
+    _emit(
+        {
+            "product_id": project.product_id,
+            "sources": [source.id for source in project.sources],
+            "maximum_dimension": project.product.maximum_dimension,
+            "tile_count": project.product.total_tile_count,
+        }
+    )
+
+
+@cli.command("download")
+@click.argument(
+    "acquisition_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--source-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--timeout", default=60.0, show_default=True, type=click.FloatRange(min=1.0)
+)
+@click.option(
+    "--minimum-free-bytes",
+    default=5_000_000_000,
+    show_default=True,
+    type=click.IntRange(min=0),
+)
+@_command_errors
+def download_command(
+    acquisition_path: Path,
+    source_root: Path,
+    timeout: float,
+    minimum_free_bytes: int,
+) -> None:
+    """Download or resume one declared source asset."""
+    _emit(
+        download_source(
+            load_acquisition(acquisition_path),
+            source_root,
+            timeout=timeout,
+            minimum_free_bytes=minimum_free_bytes,
+        )
+    )
+
+
+@cli.command("inspect-source")
+@click.argument(
+    "acquisition_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--source-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--evidence-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@_command_errors
+def inspect_source_command(
+    acquisition_path: Path, source_root: Path, evidence_root: Path
+) -> None:
+    """Capture GDAL metadata and compare it with a source contract."""
+    _emit(
+        inspect_source(load_acquisition(acquisition_path), source_root, evidence_root)
+    )
+
+
+def _root_options(function):
+    function = click.option(
+        "--evidence-root",
+        required=True,
+        type=click.Path(file_okay=False, path_type=Path),
+    )(function)
+    function = click.option(
+        "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+    )(function)
+    function = click.option(
+        "--work-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+    )(function)
+    function = click.option(
+        "--source-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+    )(function)
+    return function
+
+
+@cli.command("preflight")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@_root_options
+@_command_errors
+def preflight_command(
+    project_path: Path,
+    source_root: Path,
+    work_root: Path,
+    output_root: Path,
+    evidence_root: Path,
+) -> None:
+    """Validate tools, roots, source readiness, and initial disk estimates."""
+    _emit(
+        preflight(
+            load_project(project_path),
+            source_root=source_root,
+            work_root=work_root,
+            output_root=output_root,
+            evidence_root=evidence_root,
+        )
+    )
+
+
+@cli.command("build-base")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--source-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--work-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option("--threads", default=1, show_default=True, type=click.IntRange(min=1))
+@click.option(
+    "--warp-memory-mb", default=512, show_default=True, type=click.IntRange(min=1)
+)
+@_command_errors
+def build_base_command(
+    project_path: Path,
+    source_root: Path,
+    work_root: Path,
+    threads: int,
+    warp_memory_mb: int,
+) -> None:
+    """Reproject admitted source imagery once onto the maximum target grid."""
+    _emit(
+        build_base(
+            load_project(project_path),
+            source_root=source_root,
+            work_root=work_root,
+            threads=threads,
+            warp_memory_mb=warp_memory_mb,
+        )
+    )
+
+
+@cli.command("build-levels")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--work-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@_command_errors
+def build_levels_command(project_path: Path, work_root: Path) -> None:
+    """Area-average every lower level directly from the maximum-level base."""
+    _emit(build_levels(load_project(project_path), work_root=work_root))

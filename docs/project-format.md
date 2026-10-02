@@ -38,7 +38,8 @@ kind = "display-texture"
 bounds = [-180.0, -90.0, 180.0, 90.0]
 maximum_zoom = 8
 tile_size = 512
-resampling = "area"
+reprojection_resampling = "bilinear"
+pyramid_resampling = "average"
 pixel_type = "uint8"
 channels = "grayscale"
 format = "png"
@@ -64,6 +65,18 @@ Each source specification should declare:
 Unknown values discovered during an explicit source-admission workflow may be
 captured in a candidate report, but a production build must not silently bless
 them. A human-reviewed update to the source specification comes first.
+
+Source specifications therefore have an explicit `status` of `candidate` or
+`admitted`. Discovery-page claims belong in `[reported]`. Only reviewed object
+identity and raster metadata belong in `[expected]`; changing to `admitted`
+requires a complete expected byte size, SHA-256, dimensions, band count, and
+data type. The initial processor also requires a reviewed `source_crs` resource
+before reprojection.
+
+The two resampling choices are separate by design. `reprojection_resampling`
+is used only while mapping admitted source pixels onto the maximum-resolution
+target grid. `pyramid_resampling` is used to derive each lower level directly
+from that base, and is fixed to area averaging (`average`) in format version 1.
 
 ## Target definitions
 

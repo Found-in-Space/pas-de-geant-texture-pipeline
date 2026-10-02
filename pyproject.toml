@@ -16,6 +16,9 @@ dependencies = [
 [project.urls]
 Homepage = "https://foundin.space/"
 
+[project.scripts]
+pas-de-geant-textures = "foundinspace.textures.cli:cli"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/foundinspace"]
 
@@ -40,5 +43,6 @@ ignore = ["E501"]
 quote-style = "double"
 
 [tool.pytest.ini_options]
+addopts = "--cov=foundinspace --cov-report=term-missing"
 testpaths = ["tests"]
 pythonpath = ["src"]

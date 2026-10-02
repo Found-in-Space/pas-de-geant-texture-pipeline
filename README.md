@@ -48,24 +48,36 @@ Git. Their locations will be supplied to the CLI or project-local run config;
 they must never be inferred from machine-specific absolute paths committed to a
 product definition.
 
-## Planned CLI
+## CLI
 
-The implementation should expose one stage-oriented command, provisionally
-`pas-de-geant-textures`, with these operations:
+The initial implementation exposes a stage-oriented `pas-de-geant-textures`
+command. Acquisition and raster construction are intentionally separate so a
+downloaded candidate cannot silently become a production input.
 
 ```text
+download
 inspect-source
 preflight
 build-base
 build-levels
-emit-tiles
-validate
-report
-run
+validate-project
 ```
 
-The exact command surface is not implemented yet. See
-[`docs/implementation-plan.md`](docs/implementation-plan.md) for the handoff.
+Tile emission, complete product validation, final reporting, and orchestration
+remain to be implemented. See
+[`docs/implementation-plan.md`](docs/implementation-plan.md) for the phased
+handoff.
+
+Run the CLI through the locked environment:
+
+```console
+UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures --help
+```
+
+The processor currently delegates raster operations to the system
+`gdalinfo`, `gdalwarp`, `gdal_translate`, and `proj` executables. Their exact
+versions and commands are recorded in evidence and stage state. A pinned
+distribution/container remains required before the first publication build.
 
 ## First product
 
@@ -73,6 +85,11 @@ The initial product is documented at
 [`projects/moon/lroc-wac-global-100m/README.md`](projects/moon/lroc-wac-global-100m/README.md).
 It targets opaque 8-bit grayscale PNG tiles at zoom levels 0–8 using a square
 geographic XYZ matrix with 512-pixel tiles.
+
+Its checked-in source specification remains explicitly `candidate`. Running
+`download` records the actual object checksum and HTTP receipt, and
+`inspect-source` records complete GDAL metadata. Those results must be reviewed
+and promoted into an admitted source contract before `build-base` will run.
 
 ## Licence
 

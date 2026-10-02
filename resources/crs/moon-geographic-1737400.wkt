@@ -1,0 +1,13 @@
+GEOGCRS["Moon geographic (sphere, 1737400 m)",
+    DATUM["Moon spherical datum",
+        ELLIPSOID["Moon sphere",1737400,0,
+            LENGTHUNIT["metre",1]]],
+    PRIMEM["Reference meridian",0,
+        ANGLEUNIT["degree",0.0174532925199433]],
+    CS[ellipsoidal,2],
+        AXIS["longitude",east,
+            ORDER[1],
+            ANGLEUNIT["degree",0.0174532925199433]],
+        AXIS["latitude",north,
+            ORDER[2],
+            ANGLEUNIT["degree",0.0174532925199433]]]

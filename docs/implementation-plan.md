@@ -5,6 +5,9 @@ phases; do not begin with the full 5.5 GB lunar source.
 
 ## Phase 1: contracts and toolchain spike
 
+Status: initial implementation complete; publication pinning of the external
+GDAL/PROJ distribution remains open.
+
 1. Choose the implementation boundary between Python and GDAL command-line
    tools. Prefer explicit subprocess commands when they make tool versions and
    exact operations easier to record; do not hide critical defaults.
@@ -23,7 +26,19 @@ Decision gate: record the chosen GDAL installation strategy. Python wheels that
 quietly bundle a different GDAL/PROJ stack from the system tools can undermine
 reproducibility.
 
+The initial boundary uses Python for strict contracts, hashing, receipts,
+restart state, and orchestration, and invokes system GDAL/PROJ executables for
+raster operations. State records the complete command and versions. This is
+sufficient for synthetic development, but a full publication run must use and
+record a pinned system image or container rather than relying on an unspecified
+host installation.
+
 ## Phase 2: synthetic end-to-end product
+
+Status: source inspection, preflight, maximum-level reprojection, and
+direct-from-base lower-level construction are implemented. Synthetic image
+generation, tile emission, full validation, final reporting, and the `run`
+orchestrator remain.
 
 Build a small projected lunar source and a zoom 0–2 product exercising the real
 pipeline. The fixture must contain unmistakable north/south/east/west markers,
