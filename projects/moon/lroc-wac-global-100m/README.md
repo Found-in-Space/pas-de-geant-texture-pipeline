@@ -5,7 +5,9 @@
 Admitted first source and candidate first product. The controlled source
 download and GDAL inspection have been reviewed, and the checked-in acquisition
 specification pins the exact byte identity, raster metadata, and source CRS.
-The full base raster and tile pyramid have not yet been built or validated.
+The producer now supports the complete raster pyramid, opaque PNG emission, and
+exact streaming reconstruction validation. Publication and embedded-viewer
+acceptance remain separate gates.
 
 ## Admitted source
 
@@ -46,7 +48,7 @@ CRS is equivalent to the embedded CRS.
 
 ## Planned output
 
-| Property | Planned value |
+| Property | Product value |
 | --- | --- |
 | Bounds | longitude −180° to +180°; latitude −90° to +90° |
 | Addressing | XYZ; eastward `x`, southward `y` |
@@ -54,7 +56,7 @@ CRS is equivalent to the embedded CRS.
 | Tile size | 512 × 512 pixels |
 | Encoding | opaque 8-bit grayscale PNG |
 | Path | `imagery/{z}/{x}/{y}.png` |
-| Zooms | 0–8, pending source and viewer validation |
+| Zooms | 0–8, pending embedded-viewer validation |
 
 Zoom 8 represents a 131,072 × 131,072 geographic grid, approximately 83 m
 per horizontal pixel at the lunar equator. Latitude is intentionally sampled

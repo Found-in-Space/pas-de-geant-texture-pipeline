@@ -9,12 +9,19 @@ import pytest
 
 from foundinspace.textures.processing import build_base, build_levels
 from foundinspace.textures.project import load_project
+from foundinspace.textures.tiles import emit_tiles, validate_tiles
 from foundinspace.textures.toolchain import gdalinfo, run_command
 
 pytestmark = pytest.mark.skipif(
     not all(
         shutil.which(name)
-        for name in ("gdal_create", "gdalinfo", "gdalwarp", "gdal_translate")
+        for name in (
+            "gdal_create",
+            "gdalinfo",
+            "gdalwarp",
+            "gdal_translate",
+            "gdal_retile.py",
+        )
     ),
     reason="system GDAL command-line tools are not installed",
 )
@@ -144,9 +151,18 @@ path_template = "imagery/{z}/{x}/{y}.png"
     )
     project = load_project(project_path)
     work_root = tmp_path / "work"
+    output_root = tmp_path / "output"
+    evidence_root = tmp_path / "evidence"
 
     build_base(project, source_root=source_root, work_root=work_root)
     build_levels(project, work_root=work_root)
+    emitted = emit_tiles(project, work_root=work_root, output_root=output_root)
+    validation = validate_tiles(
+        project,
+        work_root=work_root,
+        output_root=output_root,
+        evidence_root=evidence_root,
+    )
 
     base_metadata, _ = gdalinfo(work_root / "levels/1.tif")
     lower_metadata, _ = gdalinfo(work_root / "levels/0.tif")
@@ -154,3 +170,8 @@ path_template = "imagery/{z}/{x}/{y}.png"
     assert lower_metadata["size"] == [16, 16]
     assert base_metadata["bands"][0]["type"] == "Byte"
     assert lower_metadata["bands"][0]["type"] == "Byte"
+    assert emitted["output"]["tile_count"] == 5
+    assert validation["valid"] is True
+    assert validation["tile_count"] == 5
+    assert validation["checks"]["every_level_reconstructs_exactly"] is True
+    assert len(list((output_root / "imagery").rglob("*.png"))) == 5

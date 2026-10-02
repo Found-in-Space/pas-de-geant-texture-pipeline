@@ -35,10 +35,10 @@ host installation.
 
 ## Phase 2: synthetic end-to-end product
 
-Status: source inspection, preflight, maximum-level reprojection, and
-direct-from-base lower-level construction are implemented. Synthetic image
-generation, tile emission, full validation, final reporting, and the `run`
-orchestrator remain.
+Status: source inspection, preflight, maximum-level reprojection,
+direct-from-base lower-level construction, opaque tile emission, and exact
+streaming validation are implemented. Rich publication reporting and the
+`run` orchestrator remain.
 
 Build a small projected lunar source and a zoom 0–2 product exercising the real
 pipeline. The fixture must contain unmistakable north/south/east/west markers,

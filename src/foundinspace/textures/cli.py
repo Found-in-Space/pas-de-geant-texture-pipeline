@@ -15,6 +15,7 @@ from .processing import (
     preflight,
 )
 from .project import load_acquisition, load_project
+from .tiles import emit_tiles, validate_tiles
 from .toolchain import ToolError
 
 
@@ -212,3 +213,62 @@ def build_base_command(
 def build_levels_command(project_path: Path, work_root: Path) -> None:
     """Area-average every lower level directly from the maximum-level base."""
     _emit(build_levels(load_project(project_path), work_root=work_root))
+
+
+@cli.command("emit-tiles")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--work-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@_command_errors
+def emit_tiles_command(project_path: Path, work_root: Path, output_root: Path) -> None:
+    """Copy every aligned level window into opaque grayscale PNG tiles."""
+    _emit(
+        emit_tiles(
+            load_project(project_path),
+            work_root=work_root,
+            output_root=output_root,
+        )
+    )
+
+
+@cli.command("validate-tiles")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--work-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--output-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--evidence-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@_command_errors
+def validate_tiles_command(
+    project_path: Path,
+    work_root: Path,
+    output_root: Path,
+    evidence_root: Path,
+) -> None:
+    """Validate every tile structurally and reconstruct every level exactly."""
+    _emit(
+        validate_tiles(
+            load_project(project_path),
+            work_root=work_root,
+            output_root=output_root,
+            evidence_root=evidence_root,
+        )
+    )

@@ -56,7 +56,12 @@ The output root should include generated, machine-readable metadata recording:
 - producer Git SHA and tool versions.
 
 Metadata filenames and their schema must be fixed during implementation before
-the first publication.
+the first publication. Format version 1 uses:
+
+- `product.json` for the product identity and per-level summaries;
+- `manifests/tiles-z{z}.sha256` for canonical per-tile payload checksums;
+- `tiles.validation.json` in the run evidence root for complete structural and
+  pixel-reconstruction validation.
 
 ## Topography exclusion
 

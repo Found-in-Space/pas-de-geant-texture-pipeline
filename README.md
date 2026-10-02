@@ -14,9 +14,9 @@ Mars, Venus, and deliberately constructed Earth imagery.
 
 The repository name is intentionally application-specific while the project
 model is target-neutral. It does not contain Pas de Géant viewer code and it
-does not publish large tile trees to Git. The repository is currently a
-planning scaffold; the production CLI and raster pipeline are not implemented
-yet.
+does not publish large tile trees to Git. The stage-oriented production CLI
+implements controlled acquisition, source inspection, raster construction,
+opaque PNG emission, and exact full-product tile validation.
 
 ## Ownership boundary
 
@@ -60,11 +60,13 @@ inspect-source
 preflight
 build-base
 build-levels
+emit-tiles
+validate-tiles
 validate-project
 ```
 
-Tile emission, complete product validation, final reporting, and orchestration
-remain to be implemented. See
+Publication reporting and an end-to-end orchestrator remain to be implemented.
+See
 [`docs/implementation-plan.md`](docs/implementation-plan.md) for the phased
 handoff.
 
@@ -86,10 +88,10 @@ The initial product is documented at
 It targets opaque 8-bit grayscale PNG tiles at zoom levels 0–8 using a square
 geographic XYZ matrix with 512-pixel tiles.
 
-Its checked-in source specification remains explicitly `candidate`. Running
-`download` records the actual object checksum and HTTP receipt, and
-`inspect-source` records complete GDAL metadata. Those results must be reviewed
-and promoted into an admitted source contract before `build-base` will run.
+Its checked-in source specification is admitted and pins the reviewed object
+identity, raster metadata, and lunar source CRS. `emit-tiles` removes nodata
+metadata before PNG creation so black remains an opaque display value;
+`validate-tiles` decodes every PNG and exactly reconstructs every level raster.
 
 ## Licence
 

@@ -223,7 +223,7 @@ def preflight(
                 f"{name} root must be outside the Git repository: {root}"
             )
 
-    require_tools(("gdalinfo", "gdalwarp", "gdal_translate", "proj"))
+    require_tools(("gdalinfo", "gdalwarp", "gdal_translate", "gdal_retile.py", "proj"))
     source_checks: list[dict[str, Any]] = []
     for source in project.sources:
         path = roots["source"] / source.acquisition.filename
