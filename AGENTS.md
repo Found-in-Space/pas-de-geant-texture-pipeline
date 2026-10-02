@@ -1,8 +1,8 @@
 # Agent Instructions
 
-This repository produces reproducible display-texture tile sets for Pas de
-Géant. It is intentionally independent of the Pas de Géant application and of
-the `catalogs` publication repository.
+This Found in Space repository produces reproducible display-texture tile sets
+for Pas de Géant. It is intentionally independent of the Pas de Géant
+application and of the `catalogs` publication repository.
 
 ## Scope
 
@@ -31,7 +31,7 @@ the `catalogs` publication repository.
   in blocks or through tools with documented memory and spill limits.
 - Use atomic output placement and restartable stages. A failed run must not
   look complete.
-- Never stretch or normalize individual tiles independently. Photometric
+- Never stretch or normalise individual tiles independently. Photometric
   transforms and multi-source compositing rules belong to the declared build.
 - Display tiles must be opaque unless a future contract explicitly introduces
   another product type.
@@ -59,4 +59,3 @@ Read, in order:
 Do not download a large source or start a full build until the project file,
 storage roots, disk budget, expected source metadata, and evidence capture have
 been reviewed.
-

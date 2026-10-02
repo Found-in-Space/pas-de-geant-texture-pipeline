@@ -45,7 +45,7 @@ The complete zoom 0–8 pyramid contains 87,381 tiles.
 - How are genuinely missing pixels represented, and is opaque black the correct
   display fallback?
 - What compressed size and temporary space result from a representative region?
-- Do the source license and LROC/USGS citation terms require additional notice?
+- Do the source licence and LROC/USGS citation terms require additional notice?
 
 ## Consumer handoff
 
@@ -53,4 +53,3 @@ Pas de Géant will eventually point
 `PAS_DE_GEANT_TILE_PROXY_LUNAR_IMAGERY_UPSTREAM_TEMPLATE` at the immutable
 hosted prefix. Its imagery maximum zoom must be configured independently from
 the existing LOLA elevation maximum zoom.
-

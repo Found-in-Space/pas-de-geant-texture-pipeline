@@ -3,9 +3,10 @@
 ## Purpose
 
 The producer turns explicitly identified raster sources into immutable display
-texture products. A product is not tied to the Moon or to one survey. Its
-identity is the combination of target body, source assets, transformations,
-compositing policy, tile contract, producer revision, and toolchain.
+texture products for Found in Space's Pas de Géant. A product is not tied to
+the Moon or to one survey. Its identity is the combination of target body,
+source assets, transformations, compositing policy, tile contract, producer
+revision, and toolchain.
 
 The implementation must separate four concepts that are often accidentally
 coupled:
@@ -68,7 +69,7 @@ source priority/blend rules ----------------+              |
 
 `inspect-source` records complete tool-readable metadata and compares it with
 the source contract before expensive processing begins. For a one-source
-product, normalization and base construction may collapse into one reprojection
+product, normalisation and base construction may collapse into one reprojection
 operation. For a multi-source product, each source is normalized independently
 before deterministic compositing.
 
@@ -83,9 +84,9 @@ than relying on input order implicitly:
 - `mosaic`: sources are expected to be photometrically compatible and are
   combined with a declared overlap rule.
 
-Any brightness, contrast, gamma, histogram, or color-space transform is applied
+Any brightness, contrast, gamma, histogram, or colour-space transform is applied
 to a complete declared source layer or to the final composite. Per-tile
-normalization is prohibited because it creates visible seams and makes the
+normalisation is prohibited because it creates visible seams and makes the
 product irreproducible.
 
 ## Target-body rules
@@ -116,6 +117,5 @@ product irreproducible.
 
 - Height/elevation tiles, terrain meshes, displacement maps, and normal maps.
 - Runtime tile serving, cache policy, or viewer fallback behavior.
-- Catalog publication implementation.
+- `catalogs` publication assembly.
 - A generic GIS toolbox unrelated to Pas de Géant products.
-

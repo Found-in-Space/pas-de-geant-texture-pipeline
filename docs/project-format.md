@@ -54,7 +54,7 @@ Each source specification should declare:
 - public landing page and exact payload URL or a documented manual retrieval
   method;
 - expected filename, byte size, and SHA-256 once known;
-- license/citation and retrieval notes;
+- licence/citation and retrieval notes;
 - expected raster dimensions, band count, type, CRS, geotransform, mask,
   nodata, scale, offset, and relevant metadata;
 - coverage geometry or bounds;
@@ -91,6 +91,5 @@ The final report should compute a canonical product identity from at least:
 - material external tool versions;
 - generated payload manifest checksum.
 
-The catalog publication can then pin this identity and the immutable storage
-prefix without committing the tile tree.
-
+The Found in Space `catalogs` publication can then pin this identity and the
+immutable storage prefix without committing the tile tree.

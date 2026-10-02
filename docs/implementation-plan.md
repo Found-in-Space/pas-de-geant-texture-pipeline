@@ -70,7 +70,7 @@ algorithm.
    offset with the current assumptions. Update the source specification only
    after review.
 5. Confirm whether byte values are already display-ready. Do not add `-scale`
-   or histogram normalization by default.
+   or histogram normalisation by default.
 6. Run a representative regional build and measure compression, speed, memory,
    and temporary-space behavior.
 7. Recalculate the full-run disk budget with safety margin.
@@ -91,8 +91,10 @@ level-zero geographic matrix. Keep its local tile builder only for fixtures.
 
 Validate the actual WAC product in the viewer at both poles, the antimeridian,
 tile boundaries, and zoom transitions. Once accepted, create a `catalogs`
-publication that pins this repository by exact public Git SHA and authenticates
-the externally hosted payload.
+publication under the next `YYYYMMDD.N` release ID. It must pin this repository
+by public URL and exact Git SHA, authenticate the externally hosted payload, and
+declare whether the release is a standalone work or a new immutable version of
+an evolving series.
 
 ## Open decisions
 
@@ -101,6 +103,5 @@ the externally hosted payload.
 - Manifest granularity for tens of thousands of objects.
 - Canonical JSON and configuration identity rules.
 - Published object-store prefix and immutability controls.
-- Whether later color products use RGB PNG, another lossless format, or a new
+- Whether later colour products use RGB PNG, another lossless format, or a new
   version of the consumer contract.
-

@@ -3,12 +3,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pas-de-geant-texture-pipeline"
+name = "found-in-space-pas-de-geant-texture-pipeline"
 version = "0.1.0"
-description = "Reproducible planetary display-texture production for Pas de Géant."
+description = "Reproducible planetary display-texture production for Found in Space's Pas de Géant."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "click>=8.3.1",
+]
 
 [project.urls]
 Homepage = "https://foundin.space/"
@@ -39,4 +42,3 @@ quote-style = "double"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-

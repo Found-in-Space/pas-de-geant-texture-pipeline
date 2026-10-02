@@ -1,7 +1,7 @@
 # Display-texture tile contract
 
 This contract is intentionally independent of any particular source or target
-body. Individual products may choose different zoom ranges or color encodings,
+body. Individual products may choose different zoom ranges or colour encodings,
 but deviations must be explicit and supported by the Pas de Géant consumer.
 
 ## Baseline contract
@@ -13,7 +13,7 @@ but deviations must be explicit and supported by the Pas de Géant consumer.
 - 512 × 512 pixels per tile.
 - Opaque PNG for display imagery.
 - Path `imagery/{z}/{x}/{y}.png`.
-- No independent per-tile stretch, normalization, or color adjustment.
+- No independent per-tile stretch, normalisation, or colour adjustment.
 - Missing coverage is represented by the product's declared opaque fallback
   pixel unless a future, separately versioned consumer contract says otherwise.
 
@@ -60,8 +60,7 @@ the first publication.
 
 ## Topography exclusion
 
-This contract is for visual color/intensity samples. It must not be reused for
+This contract is for visual colour/intensity samples. It must not be reused for
 elevation simply because both products can be tiled. Topography requires a
 separate contract for units, vertical datum, numeric precision, nodata,
 interpolation, quantization, range, and potentially mesh continuity.
-

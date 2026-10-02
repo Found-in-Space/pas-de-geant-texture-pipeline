@@ -71,7 +71,7 @@ The WAC build additionally requires:
   comparison that covers every pixel;
 - selected inverse-coordinate checks against the original source;
 - manual review of global brightness consistency and source coverage;
-- preservation of all generated logs and reports for the catalog handoff.
+- preservation of all generated logs and reports for the `catalogs` handoff.
 
 ## Pas de Géant integration
 
@@ -84,4 +84,3 @@ Tests in the application repository should cover:
 - proxy operation against a local static tile server;
 - interactive inspection at poles, antimeridian, boundaries, and zoom changes;
 - no unexpected missing-tile requests during ordinary navigation.
-
