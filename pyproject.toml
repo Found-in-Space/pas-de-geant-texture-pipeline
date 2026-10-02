@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pas-de-geant-texture-pipeline"
+version = "0.1.0"
+description = "Reproducible planetary display-texture production for Pas de Géant."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.urls]
+Homepage = "https://foundin.space/"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/foundinspace"]
+
+[dependency-groups]
+dev = [
+  "pre-commit>=4",
+  "pytest>=8",
+  "pytest-cov>=6",
+  "ruff>=0.15",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
