@@ -69,25 +69,32 @@ citation = "Citation"
         load_acquisition(path)
 
 
-def test_repository_candidate_is_explicitly_not_admitted() -> None:
+def test_repository_source_is_admitted_with_complete_contract() -> None:
     root = Path(__file__).resolve().parents[1]
     spec = load_acquisition(
         root
         / "projects/moon/lroc-wac-global-100m/sources/lroc-wac-global-morphology-100m.toml"
     )
 
-    assert spec.status == "candidate"
-    assert spec.expected.sha256 is None
+    assert spec.status == "admitted"
+    assert spec.expected.complete
+    assert (
+        spec.expected.sha256
+        == "87159ead1888ae31bb647e957ec60943022b707ec804cb5353a304575936fd55"
+    )
+    assert spec.expected.size_bytes == 5_959_263_751
+    assert spec.source_crs is not None
+    assert spec.source_crs.is_file()
     assert spec.reported["width"] == 109_164
 
 
-def test_repository_wac_project_fixes_target_grid_but_remains_unadmitted() -> None:
+def test_repository_wac_project_fixes_target_grid_with_admitted_source() -> None:
     root = Path(__file__).resolve().parents[1]
     project = load_project(root / "projects/moon/lroc-wac-global-100m/project.toml")
 
     assert project.product.maximum_dimension == 131_072
     assert project.product.total_tile_count == 87_381
-    assert project.sources[0].acquisition.status == "candidate"
+    assert project.sources[0].acquisition.status == "admitted"
 
 
 def test_project_semantic_identity_does_not_include_checkout_path(

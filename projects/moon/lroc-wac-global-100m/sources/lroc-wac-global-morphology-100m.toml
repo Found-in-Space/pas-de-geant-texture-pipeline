@@ -1,16 +1,16 @@
 format_version = 1
-status = "candidate"
+status = "admitted"
 source_id = "lroc-wac-global-morphology-100m-june-2013"
 title = "Moon LRO LROC WAC Global Morphology Mosaic 100m"
 landing_page = "https://astrogeology.usgs.gov/search/map/moon_lro_lroc_wac_global_morphology_mosaic_100m"
 url = "https://planetarymaps.usgs.gov/mosaic/Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif"
 filename = "Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif"
 citation = "LROC Team; Arizona State University; USGS Astrogeology Science Center."
+source_crs = "../../../../resources/crs/moon-simple-cylindrical-1737400.wkt"
 
-# These are discovery-page claims, not an admitted byte or raster contract.
-# `download` records the actual object identity; `inspect-source` records GDAL
-# metadata. Human review must promote those values into [expected] and set
-# status = "admitted" before build-base will run.
+# These are retained as the original discovery-page claims. The admitted byte
+# and raster contract below comes from the controlled download and GDAL
+# inspection recorded by the admission run.
 [reported]
 approximate_size = "5.5 GB"
 width = 109164
@@ -18,3 +18,16 @@ height = 54582
 band_count = 1
 data_type = "Byte"
 projection = "Simple Cylindrical; planetocentric latitude; positive-east longitude"
+
+[expected]
+size_bytes = 5959263751
+sha256 = "87159ead1888ae31bb647e957ec60943022b707ec804cb5353a304575936fd55"
+width = 109164
+height = 54582
+band_count = 1
+data_type = "Byte"
+geo_transform = [-5458203.0763469, 100.0, 0.0, 2729101.53817345, 0.0, -100.0]
+nodata = 0.0
+mask_flags = ["ALL_VALID"]
+scale = 1.00395256917
+offset = -0.003952569169961

@@ -2,13 +2,12 @@
 
 ## Status
 
-Candidate first product. The checked-in [`project.toml`](project.toml) fixes the
-intended target grid and display contract, but its source remains explicitly
-unadmitted. The full source has not been downloaded, inspected, or tiled by
-this repository. `build-base` will refuse to run until the actual object and
-metadata have been reviewed and the acquisition specification is admitted.
+Admitted first source and candidate first product. The controlled source
+download and GDAL inspection have been reviewed, and the checked-in acquisition
+specification pins the exact byte identity, raster metadata, and source CRS.
+The full base raster and tile pyramid have not yet been built or validated.
 
-## Source candidate
+## Admitted source
 
 - Landing page: <https://astrogeology.usgs.gov/search/map/moon_lro_lroc_wac_global_morphology_mosaic_100m>
 - Expected filename: `Lunar_LRO_LROC-WAC_Mosaic_global_100m_June2013.tif`
@@ -16,14 +15,18 @@ metadata have been reviewed and the acquisition specification is admitted.
 - Reported raster: 109,164 × 54,582, one-band 8-bit grayscale
 - Intended target body: Moon, reference radius 1,737,400 m
 
-All reported properties are admission expectations, not yet verified facts.
-Capture the actual bytes, checksum, HTTP metadata, and complete `gdalinfo -json`
-before making the source contract authoritative.
+The admitted object is 5,959,263,751 bytes with SHA-256
+`87159ead1888ae31bb647e957ec60943022b707ec804cb5353a304575936fd55`.
+It is a 109,164 × 54,582 one-band Byte GeoTIFF in lunar Simple Cylindrical at
+100 metres per pixel, using a 1,737,400 metre sphere. Band metadata declares
+nodata `0`, an all-valid mask, scale `1.00395256917`, and offset
+`-0.003952569169961`.
 
-The candidate acquisition specification is
+The acquisition specification is
 [`sources/lroc-wac-global-morphology-100m.toml`](sources/lroc-wac-global-morphology-100m.toml).
-It records the public USGS URL and reported properties without presenting them
-as verified expectations. A local admission run is deliberately two-stage:
+It records the public USGS URL, the original reported properties, and the
+reviewed source contract. A new local acquisition remains deliberately
+two-stage:
 
 ```console
 UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures download \
@@ -36,12 +39,10 @@ UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures inspect-source \
   --evidence-root "$RUN_ROOT/evidence"
 ```
 
-`download` resumes through a hidden partial file, verifies any admitted size
-and checksum, and promotes the payload atomically. For this candidate it records
-the discovered SHA-256 and byte size without claiming that they are reviewed.
-`inspect-source` records the full GDAL JSON plus normalized contract fields.
-Review both generated records before adding `[expected]`, a reviewed source CRS
-resource, and changing the specification status to `admitted`.
+`download` resumes through a hidden partial file, verifies the admitted size
+and checksum, and promotes the payload atomically. `inspect-source` records the
+full GDAL JSON plus normalized contract fields and proves the reviewed source
+CRS is equivalent to the embedded CRS.
 
 ## Planned output
 

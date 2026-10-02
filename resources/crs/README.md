@@ -5,10 +5,18 @@ lunar display textures. It fixes the radius at 1,737,400 metres, uses an
 east-positive longitude axis and a north-positive planetocentric latitude axis,
 and deliberately contains no authority-code dependency.
 
+`moon-simple-cylindrical-1737400.wkt` is the reviewed source CRS for the
+admitted LROC WAC global morphology mosaic. It uses the same spherical lunar
+datum, Equidistant Cylindrical (Simple Cylindrical) with standard parallel and
+natural origin at 0 degrees, zero false offsets, and metre coordinates. Its
+projection parameters are equivalent to the CRS embedded in the admitted
+GeoTIFF; the source inspection report records both normalized definitions.
+
 Validate it with the same GDAL/PROJ installation used for a build:
 
 ```console
 gdalsrsinfo -V resources/crs/moon-geographic-1737400.wkt
+gdalsrsinfo -V resources/crs/moon-simple-cylindrical-1737400.wkt
 ```
 
 Store reviewed WKT or PROJJSON definitions for target bodies here. Each resource
