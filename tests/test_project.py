@@ -81,6 +81,15 @@ def test_repository_candidate_is_explicitly_not_admitted() -> None:
     assert spec.reported["width"] == 109_164
 
 
+def test_repository_wac_project_fixes_target_grid_but_remains_unadmitted() -> None:
+    root = Path(__file__).resolve().parents[1]
+    project = load_project(root / "projects/moon/lroc-wac-global-100m/project.toml")
+
+    assert project.product.maximum_dimension == 131_072
+    assert project.product.total_tile_count == 87_381
+    assert project.sources[0].acquisition.status == "candidate"
+
+
 def test_project_semantic_identity_does_not_include_checkout_path(
     tmp_path: Path, project_factory
 ) -> None:

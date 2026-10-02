@@ -2,9 +2,11 @@
 
 ## Status
 
-Planned first product. The full source has not been admitted, downloaded, or
-tiled by this repository. Do not create `project.toml` with guessed metadata;
-inspect the actual object and review its acquisition specification first.
+Candidate first product. The checked-in [`project.toml`](project.toml) fixes the
+intended target grid and display contract, but its source remains explicitly
+unadmitted. The full source has not been downloaded, inspected, or tiled by
+this repository. `build-base` will refuse to run until the actual object and
+metadata have been reviewed and the acquisition specification is admitted.
 
 ## Source candidate
 

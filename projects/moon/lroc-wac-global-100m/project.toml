@@ -1,0 +1,30 @@
+format_version = 1
+product_id = "moon-lroc-wac-global-morphology-100m-v1"
+
+[target]
+id = "moon"
+crs = "../../../resources/crs/moon-geographic-1737400.wkt"
+longitude_range = [-180.0, 180.0]
+latitude_range = [-90.0, 90.0]
+
+[[sources]]
+id = "lroc-wac-global-morphology-100m-june-2013"
+acquisition = "sources/lroc-wac-global-morphology-100m.toml"
+priority = 100
+
+[composite]
+policy = "priority"
+missing_pixel = 0
+
+[product]
+kind = "display-texture"
+bounds = [-180.0, -90.0, 180.0, 90.0]
+maximum_zoom = 8
+tile_size = 512
+reprojection_resampling = "bilinear"
+pyramid_resampling = "average"
+pixel_type = "uint8"
+channels = "grayscale"
+format = "png"
+opaque = true
+path_template = "imagery/{z}/{x}/{y}.png"
