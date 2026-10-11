@@ -78,8 +78,12 @@ UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures --help
 
 The processor currently delegates raster operations to the system
 `gdalinfo`, `gdalwarp`, `gdal_translate`, and `proj` executables. Their exact
-versions and commands are recorded in evidence and stage state. A pinned
-distribution/container remains required before the first publication build.
+versions and commands are recorded in evidence and stage state. Preserve the
+matching uv lockfile and record the native tool versions. For display textures,
+publication requires a documented process and representative spatial and visual
+checks; byte-identical regeneration, a pinned OS image, and a full pyramid
+rebuild are not release requirements. Published-file checksums still protect
+payload identity and transfer integrity.
 
 ## First product
 

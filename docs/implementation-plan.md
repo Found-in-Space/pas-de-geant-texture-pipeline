@@ -5,8 +5,8 @@ phases; do not begin with the full 5.5 GB lunar source.
 
 ## Phase 1: contracts and toolchain spike
 
-Status: initial implementation complete; publication pinning of the external
-GDAL/PROJ distribution remains open.
+Status: initial implementation complete. Publication preserves the uv lockfile
+and records the external GDAL/PROJ versions and representative display checks.
 
 1. Choose the implementation boundary between Python and GDAL command-line
    tools. Prefer explicit subprocess commands when they make tool versions and
@@ -29,9 +29,10 @@ reproducibility.
 The initial boundary uses Python for strict contracts, hashing, receipts,
 restart state, and orchestration, and invokes system GDAL/PROJ executables for
 raster operations. State records the complete command and versions. This is
-sufficient for synthetic development, but a full publication run must use and
-record a pinned system image or container rather than relying on an unspecified
-host installation.
+sufficient for a traceable display-texture process when combined with the
+recorded source, project, uv lockfile, and representative checks. Record native
+tool versions separately. A hermetic system image, byte-identical regeneration,
+and a full pyramid rebuild are not publication gates for display textures.
 
 ## Phase 2: synthetic end-to-end product
 
@@ -113,7 +114,7 @@ an evolving series.
 
 ## Open decisions
 
-- GDAL/PROJ distribution and version pinning strategy.
+- Future GDAL/PROJ upgrades and their representative display checks.
 - Raster I/O library used for exact-window validation and PNG emission.
 - Manifest granularity for tens of thousands of objects.
 - Canonical JSON and configuration identity rules.
