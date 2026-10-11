@@ -17,6 +17,7 @@ jobs:
         with:
           python-version: "3.13"
           enable-cache: true
+          cache-local-path: .cache/uv
 
       - name: Install GDAL and PROJ command-line tools
         run: sudo apt-get update && sudo apt-get install --yes gdal-bin proj-bin
