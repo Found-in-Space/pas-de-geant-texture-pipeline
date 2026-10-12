@@ -1,4 +1,5 @@
 import json
+import math
 import re
 import threading
 import xml.etree.ElementTree as ET
@@ -15,13 +16,16 @@ from .acquisition import digest
 
 
 def metadata(dataset):
+    nodata = dataset.nodata
+    if nodata is not None and not math.isfinite(nodata):
+        nodata = "NaN" if math.isnan(nodata) else str(nodata)
     return {
         "size": [dataset.width, dataset.height],
         "count": dataset.count,
         "dtype": dataset.dtypes[0],
         "crs": dataset.crs.to_wkt() if dataset.crs else None,
         "transform": list(dataset.transform)[:6],
-        "nodata": dataset.nodata,
+        "nodata": nodata,
         "bandScale": dataset.scales[0],
         "bandOffset": dataset.offsets[0],
         "maskFlags": [
@@ -56,11 +60,21 @@ class Source:
         self.dataset = rasterio.open(path)
         self.raw_dataset = self.dataset
         self.registered_file = None
+        if self.dataset.dtypes[0].startswith("complex"):
+            self.dataset.close()
+            raise ValueError("Elevation requires real scalar values")
         registration = self.spec.get("registration")
         if registration:
             if self.dataset.crs or self.dataset.transform != Affine.identity():
                 raise ValueError(
                     "Registration override is only admitted for unregistered inputs"
+                )
+            if self.dataset.nodata is None and self.dataset.mask_flag_enums[0] != [
+                rasterio.enums.MaskFlags.all_valid
+            ]:
+                self.dataset.close()
+                raise ValueError(
+                    "Register externally masked input as a GeoTIFF before admission"
                 )
             self.crs = CRS.from_string(registration["crs"])
             self.transform = Affine(*registration["transform"])
@@ -114,8 +128,23 @@ class Source:
             ET.SubElement(simple, "DstRect", **rect)
             self.registered_file = MemoryFile(ET.tostring(root))
             self.dataset = self.registered_file.open()
-        left, bottom = self.transform @ (0, self.dataset.height)
-        right, top = self.transform @ (self.dataset.width, 0)
+        corners = [
+            self.transform @ point
+            for point in [
+                (0, 0),
+                (self.dataset.width, 0),
+                (0, self.dataset.height),
+                (self.dataset.width, self.dataset.height),
+            ]
+        ]
+        left, right = (
+            min(point[0] for point in corners),
+            max(point[0] for point in corners),
+        )
+        bottom, top = (
+            min(point[1] for point in corners),
+            max(point[1] for point in corners),
+        )
         self.projected_bounds = transform_bounds(
             self.crs,
             f"+proj=merc +R={radius} +units=m +no_defs",

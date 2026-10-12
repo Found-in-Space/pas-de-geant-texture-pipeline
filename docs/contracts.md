@@ -6,6 +6,11 @@ project file. Source admission checks band count/type, dimensions, transform,
 CRS, nodata and band scale/offset. Explicit conversion to metres and reference
 radius are mandatory. Embedded georeferencing is used; a source without it
 requires declared registration. No Earth CRS is assigned to another body.
+Native rotated rasters use conservative bounds from all four corners. Float
+NaN nodata is represented explicitly in JSON specifications and remains masked
+during scalar sampling. Heights require real scalar bands. Unregistered inputs
+with an external mask need a registered GeoTIFF preparation step; registration
+must not silently discard that mask.
 
 Builds sample physical scalar heights using bilinear reprojection, exact
 transforms and fixed unit kernel scale. Lower zooms are independently sampled

@@ -244,3 +244,74 @@ def test_parallel_emission_matches_serial_pixels_and_manifest_order(tmp_path):
         parallel / "checksums.sha256"
     ).read_bytes()
     assert validate(serial) == validate(parallel)
+
+
+def test_nan_nodata_is_admitted_and_falls_back_without_becoming_zero(tmp_path):
+    raster(tmp_path, "global.tif", np.full((32, 32), -250.0, dtype="float32"))
+    values = np.full((32, 32), -100.0, dtype="float32")
+    values[:, :16] = np.nan
+    path = raster(tmp_path, "detail.tif", values, nodata=np.nan)
+    assert inspect_source(path)["metadata"]["nodata"] == "NaN"
+    sources = [
+        Source(source_config(name), tmp_path, RADIUS) for name in ("global", "detail")
+    ]
+    try:
+        heights, _ = composite(
+            sources, tile_transform(RADIUS, 32, 0, 0, 0), 32, CRS, RADIUS
+        )
+        assert heights[16, 4] == -250
+        assert heights[16, 25] == -100
+    finally:
+        for source in sources:
+            source.close()
+
+
+def test_rotated_source_bounds_do_not_cull_valid_terrain(tmp_path):
+    from affine import Affine
+
+    path = tmp_path / "detail.tif"
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=32,
+        height=32,
+        count=1,
+        dtype="float32",
+        crs=CRS,
+        transform=Affine(100, 100, 0, 100, -100, 0),
+    ) as ds:
+        ds.write(np.full((32, 32), -1751.5, dtype="float32"), 1)
+    write_json(path.with_suffix(".json"), inspect_source(path))
+    source = Source(source_config("detail"), tmp_path, RADIUS)
+    try:
+        target = Affine(100, 0, 1600, 0, -100, 800)
+        assert source.intersects(target, 16)
+        np.testing.assert_allclose(source.sample(target, 16, CRS), -1751.5)
+    finally:
+        source.close()
+
+
+def test_complex_values_cannot_be_silently_cast_to_real_heights(tmp_path):
+    raster(tmp_path, "detail.tif", np.full((32, 32), 1 + 2j, dtype="complex64"))
+    with pytest.raises(ValueError, match="real scalar"):
+        Source(source_config("detail"), tmp_path, RADIUS)
+
+
+def test_unregistered_external_mask_is_not_silently_discarded(tmp_path):
+    path = tmp_path / "detail.tif"
+    with rasterio.open(
+        path, "w", driver="GTiff", width=32, height=32, count=1, dtype="float32"
+    ) as ds:
+        ds.write(np.ones((32, 32), dtype="float32"), 1)
+        mask = np.full((32, 32), 255, dtype="uint8")
+        mask[:, :16] = 0
+        ds.write_mask(mask)
+    spec = inspect_source(path)
+    spec["registration"] = {
+        "crs": CRS,
+        "transform": list(tile_transform(RADIUS, 32, 0, 0, 0))[:6],
+    }
+    write_json(path.with_suffix(".json"), spec)
+    with pytest.raises(ValueError, match="masked input"):
+        Source(source_config("detail"), tmp_path, RADIUS)
