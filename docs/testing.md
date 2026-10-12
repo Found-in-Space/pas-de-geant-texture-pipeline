@@ -84,3 +84,29 @@ Tests in the application repository should cover:
 - proxy operation against a local static tile server;
 - interactive inspection at poles, antimeridian, boundaries, and zoom changes;
 - no unexpected missing-tile requests during ordinary navigation.
+
+## Grid migration checks
+
+`test_system_gdal.py` builds a real small projected source through both legacy
+geographic and explicit Mercator contracts, emits/validates the full pyramid,
+checks the metre geotransform and authenticates a full-latitude polar base.
+`test_grid.py` checks inverse coordinates, exact-edge ranges, pixel centres and
+masks. `test_preview_tiles.py` samples a registered archive row gradient onto
+nonlinear Mercator rows, preserving valid black and masked holes.
+
+The sampling fixture is generated from the producer grid implementation:
+
+```sh
+UV_CACHE_DIR=.cache/uv uv run python scripts/write-grid-contract-fixture.py \
+  tests/fixtures/surface-grid.json
+```
+
+The producer test verifies that this file is reproducible. The application
+keeps the same fixture at `tests/surface-grid.fixture.json` and checks bounds,
+orientation, pixel-centre positions, ancestor crops and antimeridian wrapping
+for both body radii and both projections. Copy a regenerated fixture to the
+application repository when the grid contract changes; never hand-edit it.
+Application tests also exercise real GDAL numeric height encoding, source
+admission, grid/cache incompatibility, mesh elevation UVs, and measured crop
+bounds with both Terrarium and RG16 heights. These checks use only tiny local
+synthetic sources. Full payload and Quest acceptance remain separate steps.

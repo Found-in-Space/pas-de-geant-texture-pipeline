@@ -97,6 +97,15 @@ identity, raster metadata, and lunar source CRS. `emit-tiles` removes nodata
 metadata before PNG creation so black remains an opaque display value;
 `validate-tiles` decodes every PNG and exactly reconstructs every level raster.
 
+The [Mercator migration candidate](projects/moon/lroc-wac-global-100m-mercator-v2/README.md)
+adds an explicit format 2 grid and independent full-latitude base, preserving
+existing geographic recipes/releases. The
+[Apollo Mercator recipe](projects/moon/apollo11-preview-mercator-v2/README.md)
+prepares matching sparse context/detail for the same 3D runtime. Native sampling,
+polar display, source admission and producer/consumer checks are documented in
+those recipes and the tile contract. No scientific elevation processing is
+introduced here.
+
 ## Licence
 
 Repository software and Found in Space-authored documentation are available

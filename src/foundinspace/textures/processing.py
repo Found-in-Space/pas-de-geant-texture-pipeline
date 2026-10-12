@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import shutil
 import time
 import uuid
@@ -7,6 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from .grid import TileGrid
 from .project import AcquisitionSpec, SourceRef, TextureProject
 from .provenance import producer_identity
 from .toolchain import (
@@ -224,6 +226,7 @@ def preflight(
             )
 
     require_tools(("gdalinfo", "gdalwarp", "gdal_translate", "gdal_retile.py", "proj"))
+    validate_grid_crs(project)
     source_checks: list[dict[str, Any]] = []
     for source in project.sources:
         path = roots["source"] / source.acquisition.filename
@@ -254,6 +257,12 @@ def preflight(
         (project.product.tile_size * (1 << zoom)) ** 2
         for zoom in range(project.product.maximum_zoom + 1)
     )
+    overview_bytes = (
+        project.base_texture.width * project.base_texture.height
+        if project.base_texture
+        else 0
+    )
+    minimum_budget = base_bytes + pyramid_bytes + 2 * overview_bytes
     work_root.parent.mkdir(parents=True, exist_ok=True)
     disk = shutil.disk_usage(work_root.parent)
     producer = producer_identity()
@@ -273,9 +282,9 @@ def preflight(
             "maximum_dimension": dimension,
             "uncompressed_base_bytes": base_bytes,
             "uncompressed_pyramid_bytes": pyramid_bytes,
-            "minimum_working_budget_bytes": base_bytes + pyramid_bytes,
+            "minimum_working_budget_bytes": minimum_budget,
             "available_bytes": disk.free,
-            "disk_budget_satisfied": disk.free >= base_bytes + pyramid_bytes,
+            "disk_budget_satisfied": disk.free >= minimum_budget,
             "tile_count": project.product.total_tile_count,
         },
         "ready_for_processing": all(
@@ -285,10 +294,16 @@ def preflight(
             and source["identity_matches"]
             for source in source_checks
         )
-        and disk.free >= base_bytes + pyramid_bytes,
+        and disk.free >= minimum_budget,
         "release_eligible": producer.get("git_sha") is not None
         and producer.get("git_dirty") is False,
     }
+    if project.grid:
+        report["grid"] = project.grid.metadata()
+        report["geographic_crs_sha256"] = sha256_file(
+            project.target.geographic_crs_path
+        )
+        report["estimate"]["uncompressed_base_texture_bytes"] = overview_bytes
     atomic_write_json(roots["evidence"] / "preflight.json", report)
     return report
 
@@ -386,7 +401,9 @@ def _processing_contract(project: TextureProject) -> tuple[SourceRef, Acquisitio
     return source_ref, spec
 
 
-def _validate_level_output(metadata: dict[str, Any], *, dimension: int) -> None:
+def _validate_level_output(
+    metadata: dict[str, Any], *, dimension: int, bounds=None
+) -> None:
     if metadata.get("size") != [dimension, dimension]:
         raise ProcessingError(
             f"generated level must be {dimension} x {dimension} pixels"
@@ -399,6 +416,135 @@ def _validate_level_output(metadata: dict[str, Any], *, dimension: int) -> None:
         raise ProcessingError("generated level band must use GDAL Byte type")
     if band.get("colorInterpretation") not in {None, "Gray"}:
         raise ProcessingError("generated level band must be grayscale")
+    if bounds is not None:
+        west, south, east, north = bounds
+        expected = [
+            west,
+            (east - west) / dimension,
+            0,
+            north,
+            0,
+            (south - north) / dimension,
+        ]
+        actual = metadata.get("geoTransform", [])
+        if len(actual) != 6 or any(
+            not math.isclose(a, b, rel_tol=1e-12, abs_tol=1e-9)
+            for a, b in zip(actual, expected, strict=True)
+        ):
+            raise ProcessingError(
+                "Generated raster geotransform does not match its grid"
+            )
+
+
+def validate_grid_reference(path: Path, grid: TileGrid, projection=None) -> None:
+    projection = projection or (
+        "merc" if grid.projection == "web-mercator" else "longlat"
+    )
+    value, _ = spatial_reference_proj4(path)
+    parameters = dict(
+        part[1:].split("=", 1)
+        for part in value.split()
+        if part.startswith("+") and "=" in part
+    )
+    a = float(parameters.get("R", parameters.get("a", "nan")))
+    b = float(parameters.get("R", parameters.get("b", "nan")))
+    if (
+        parameters.get("proj") != projection
+        or not math.isclose(a, grid.radius_metres, rel_tol=1e-12)
+        or not math.isclose(b, a, rel_tol=1e-12)
+    ):
+        raise ProcessingError("Declared grid projection/radius does not match its CRS")
+    if parameters.get("pm", "0") not in {"0", "greenwich"}:
+        raise ProcessingError("XYZ requires the Greenwich prime meridian")
+    if projection == "merc" and (
+        parameters.get("units") != "m"
+        or any(
+            float(parameters.get(key, "0")) != 0
+            for key in ("lon_0", "x_0", "y_0", "lat_ts")
+        )
+        or float(parameters.get("k", parameters.get("k_0", "1"))) != 1
+    ):
+        raise ProcessingError(
+            "XYZ Mercator requires unit scale, metre units and zero offsets"
+        )
+
+
+def validate_grid_crs(project: TextureProject) -> None:
+    if not project.grid:
+        return
+    for path, projection in [
+        (
+            project.target.crs_path,
+            "merc" if project.grid.projection == "web-mercator" else "longlat",
+        ),
+        (project.target.geographic_crs_path, "longlat"),
+    ]:
+        validate_grid_reference(path, project.grid, projection)
+
+
+def _build_base_texture(project, source_path, spec, identity, work_root, environment):
+    config = project.base_texture
+    geographic = project.target.geographic_crs_path
+    overview = work_root / "base-equirectangular.tif"
+    base_identity = {**identity, "geographic_crs_sha256": sha256_file(geographic)}
+    argv = [
+        "gdalwarp",
+        "-overwrite",
+        "-of",
+        "GTiff",
+        "-ot",
+        "Byte",
+        "-s_srs",
+        str(spec.source_crs),
+        "-t_srs",
+        str(geographic),
+        "-te",
+        "-180",
+        "-90",
+        "180",
+        "90",
+        "-ts",
+        str(config.width),
+        str(config.height),
+        "-r",
+        config.resampling,
+        "-dstnodata",
+        str(project.missing_pixel),
+    ]
+    if spec.expected.nodata != "absent":
+        argv.extend(("-srcnodata", str(spec.expected.nodata)))
+    argv.extend((str(source_path), "{output}"))
+    _run_atomic_file_stage(
+        stage_name="build-base-overview",
+        identity=base_identity,
+        argv=argv,
+        output_path=overview,
+        work_root=work_root,
+        environment=environment,
+        validate_output=lambda metadata: _validate_base_texture(
+            metadata, config.width, config.height
+        ),
+    )
+    _run_atomic_file_stage(
+        stage_name="encode-base-texture",
+        identity={**base_identity, "overview_sha256": sha256_file(overview)},
+        argv=["gdal_translate", "-of", "PNG", str(overview), "{output}"],
+        output_path=work_root / config.path,
+        work_root=work_root,
+        environment=environment,
+        validate_output=lambda metadata: _validate_base_texture(
+            metadata, config.width, config.height
+        ),
+    )
+
+
+def _validate_base_texture(metadata, width, height):
+    if (
+        metadata.get("size") != [width, height]
+        or len(metadata.get("bands", [])) != 1
+        or metadata["bands"][0].get("type") != "Byte"
+    ):
+        raise ProcessingError("Base texture dimensions or grayscale encoding changed")
 
 
 def build_base(
@@ -429,8 +575,9 @@ def build_base(
         )
     target_crs_checksum = sha256_file(project.target.crs_path)
     source_crs_checksum = sha256_file(spec.source_crs)
+    validate_grid_crs(project)
     dimension = project.product.maximum_dimension
-    west, south, east, north = project.product.bounds
+    west, south, east, north = project.projected_bounds
     output = work_root.resolve() / "levels" / f"{project.product.maximum_zoom}.tif"
     argv = [
         "gdalwarp",
@@ -492,7 +639,7 @@ def build_base(
         "threads": threads,
         "warp_memory_mb": warp_memory_mb,
     }
-    return _run_atomic_file_stage(
+    state = _run_atomic_file_stage(
         stage_name="build-base",
         identity=identity,
         argv=argv,
@@ -500,9 +647,22 @@ def build_base(
         work_root=work_root.resolve(),
         environment={"CPL_TMPDIR": str(temporary_root)},
         validate_output=lambda metadata: _validate_level_output(
-            metadata, dimension=dimension
+            metadata,
+            dimension=dimension,
+            bounds=project.projected_bounds if project.grid else None,
         ),
     )
+
+    if project.base_texture:
+        _build_base_texture(
+            project,
+            source_path,
+            spec,
+            identity,
+            work_root.resolve(),
+            {"CPL_TMPDIR": str(temporary_root), "GDAL_PAM_ENABLED": "NO"},
+        )
+    return state
 
 
 def build_levels(project: TextureProject, *, work_root: Path) -> list[dict[str, Any]]:
@@ -559,7 +719,11 @@ def build_levels(project: TextureProject, *, work_root: Path) -> list[dict[str, 
                 work_root=work_root,
                 environment={"CPL_TMPDIR": str(work_root / "tmp")},
                 validate_output=lambda metadata, dimension=dimension: (
-                    _validate_level_output(metadata, dimension=dimension)
+                    _validate_level_output(
+                        metadata,
+                        dimension=dimension,
+                        bounds=project.projected_bounds if project.grid else None,
+                    )
                 ),
             )
         )

@@ -28,3 +28,18 @@ Do not copy an unreviewed `gdalinfo` fragment into this directory. The first
 implementation task is to add and test the Moon geographic CRS with radius
 exactly 1,737,400 m. Later Mars, Venus, or Earth products add separate explicit
 resources rather than changing an existing published definition.
+
+`moon-mercator-1737400.wkt` defines the new format 2 XYZ target, derived from
+spherical Mercator on the same lunar datum: radius 1,737,400 m, Greenwich prime
+meridian, east/north axes in metres, natural origin 0°, scale 1 and zero false
+offsets. The longitude/latitude convention and physical sphere are unchanged.
+The finite XYZ extent is ±πR, cutting latitude at ±85.0511287798066°. It changes
+the raster sampling scheme, without claiming an EPSG Earth datum. Validate with:
+
+```sh
+gdalsrsinfo -V resources/crs/moon-mercator-1737400.wkt
+```
+
+The separate base uses the existing reviewed geographic CRS. The source CRS
+remains the admitted Simple Cylindrical resource; assigning Mercator to source
+bytes without reprojection is invalid.

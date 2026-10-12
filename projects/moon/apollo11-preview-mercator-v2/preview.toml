@@ -1,0 +1,48 @@
+format_version = 2
+kind = "sparse-detail-preview"
+product_id = "apollo11-variable-resolution-mercator-v2"
+radius_metres = 1737400
+latitude = 0.67416
+longitude = 23.47314
+extent_km = 100
+tile_size = 512
+minimum_zoom = 0
+context_maximum_zoom = 12
+context_metres_per_pixel = 8.42315289562
+target_crs = "../../../resources/crs/moon-mercator-1737400.wkt"
+
+# One transform for the whole Kaguya layer, before generating any tiles.
+# These are reflectance DN display endpoints, not scientific value encodings.
+display_dn_range = [250, 850]
+
+[[context_sources]]
+stem = "TCO_MAPs02_N00E021S03E024SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon021/data/TCO_MAPs02_N00E021S03E024SC.img"
+[[context_sources]]
+stem = "TCO_MAPs02_N03E021N00E024SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon021/data/TCO_MAPs02_N03E021N00E024SC.img"
+[[context_sources]]
+stem = "TCO_MAPs02_N00E024S03E027SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon024/data/TCO_MAPs02_N00E024S03E027SC.img"
+[[context_sources]]
+stem = "TCO_MAPs02_N03E024N00E027SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon024/data/TCO_MAPs02_N03E024N00E027SC.img"
+
+# Archive pyramids are materialized by prepare-preview-tiles before 3D use.
+# These caps retain the declared native sampling in both Mercator directions.
+[[detail_sources]]
+id = "regional"
+metadata = "apollo11-regional.json"
+extent_km = 25
+maximum_zoom = 15
+priority = 100
+[[detail_sources]]
+id = "landing"
+metadata = "apollo11-fine.json"
+extent_km = 5
+maximum_zoom = 16
+priority = 200
+
+[grid]
+projection = "web-mercator"
+radius_metres = 1737400

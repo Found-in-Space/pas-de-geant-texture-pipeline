@@ -1,5 +1,9 @@
 # Display-texture tile contract
 
+The local [sparse detail preview](sparse-preview-contract.md) has its own kind
+and version discriminator and uses masks. The opaque baseline below remains the
+production display-texture contract.
+
 This contract is intentionally independent of any particular source or target
 body. Individual products may choose different zoom ranges or colour encodings,
 but deviations must be explicit and supported by the Pas de Géant consumer.
@@ -69,3 +73,38 @@ This contract is for visual colour/intensity samples. It must not be reused for
 elevation simply because both products can be tiled. Topography requires a
 separate contract for units, vertical datum, numeric precision, nodata,
 interpolation, quantization, range, and potentially mesh continuity.
+
+## Explicit-grid contract (format version 2)
+
+The baseline formulas above describe immutable format 1 geographic products.
+Format 2 retains the square opaque XYZ payload, orientation, window emission
+and direct-from-base pyramid rules, and declares this additional grid identity:
+
+```json
+{"formatVersion": 1, "projection": "web-mercator", "radiusMetres": 1737400}
+```
+
+`grid` is required in `product.json`. For tile `(z, x, y)`, `n = 2^z`:
+
+```text
+longitude(x) = -180 + 360*x/n
+latitude(y)  = atan(sinh(pi*(1 - 2*y/n))) * 180/pi
+```
+
+Sample centres use fractional indices `x + (column + 0.5)/tile_size` and
+`y + (row + 0.5)/tile_size`. There is no extra antimeridian column. GDAL target
+extent is ±πR in metres and the sampled latitude limit is ±85.0511287798066°.
+Using the same addresses does not make geographic and Mercator bytes equivalent.
+
+The output also includes an independently generated full-latitude `base.png`.
+`baseTexture` records `path`, `projection: "equirectangular"`, `width`, `height`
+and `sha256`. Product identity authenticates the base descriptor as well as the
+grid and tile payload. Full validation checks the base against its build and
+reports grid coverage separately from base coverage of the poles.
+
+The shared consumer checks the grid against the body's sphere/equatorial radius
+and any companion elevation source. Mercator zoom 0 is never used as an
+equirectangular base. Its caps use the full-latitude base and zero reference
+height outside the streamed latitude extent. New products need new immutable
+prefixes and cache identities; neither descriptor edits nor filename changes
+constitute reprojection. Existing format 1 releases remain geographic.

@@ -1,7 +1,7 @@
 # Project format
 
-The first implementation should define and validate `format_version = 1` TOML
-project files. A project describes semantic inputs and outputs; it must not
+The parser accepts `format_version = 1` and `2` TOML project files. A project
+describes semantic inputs and outputs; it must not
 contain credentials or machine-specific run paths.
 
 Relative paths resolve from the project file. Environment-variable expansion
@@ -9,10 +9,10 @@ inside TOML path values should be rejected so that the same file means the same
 thing on every host. Local source, work, output, and evidence roots are supplied
 as explicit CLI arguments or a separate ignored run file.
 
-## Proposed model
+## Legacy geographic model
 
-The names below are a design contract for implementation, not an already
-supported parser.
+Version 1 retains its published geographic interpretation. Existing recipes
+are not rewritten during the Mercator migration.
 
 ```toml
 format_version = 1
@@ -106,3 +106,35 @@ The final report should compute a canonical product identity from at least:
 
 The Found in Space `catalogs` publication can then pin this identity and the
 immutable storage prefix without committing the tile tree.
+
+## Explicit grid and base texture (version 2)
+
+Version 2 adds required `[grid]` and `[base_texture]` tables and
+`target.geographic_crs`. The new WAC recipe is the complete runnable example:
+`projects/moon/lroc-wac-global-100m-mercator-v2/project.toml`.
+
+```toml
+[grid]
+projection = "web-mercator"
+radius_metres = 1737400
+
+[base_texture]
+width = 2048
+height = 1024
+path = "base.png"
+resampling = "average"
+```
+
+The supported projections are `web-mercator` and `geographic`; their normalized
+XYZ matrix is always global. Target/product longitude and latitude bounds must
+match that grid. Mercator bounds are ±180°, ±85.0511287798066°; warp extents are
+in projected metres (±πR), not latitude degrees. GDAL validates the declared
+sphere, projection, prime meridian, scale, offsets and units before building.
+Generated level geotransforms must match the projected extent and dimensions.
+The old format rejects these new tables rather than silently ignoring them.
+
+The independent equirectangular base spans ±180°, ±90°, and is averaged from
+the original admitted source, rather than from a clipped Mercator tile. Its CRS
+resource hash, dimensions, resampling and payload hash participate in generated
+build/product identity. It is opaque grayscale in the current processor. The
+base and polar display do not represent scientific heights.

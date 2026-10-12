@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from .grid import TileGrid
 from .util import reject_unportable_path
 
 FORMAT_VERSION = 1
@@ -19,8 +20,10 @@ _PROJECT_KEYS = {
     "sources",
     "composite",
     "product",
+    "grid",
+    "base_texture",
 }
-_TARGET_KEYS = {"id", "crs", "longitude_range", "latitude_range"}
+_TARGET_KEYS = {"id", "crs", "geographic_crs", "longitude_range", "latitude_range"}
 _SOURCE_REF_KEYS = {"id", "acquisition", "priority"}
 _COMPOSITE_KEYS = {"policy", "missing_pixel"}
 _PRODUCT_KEYS = {
@@ -154,6 +157,7 @@ class TargetConfig:
     crs_path: Path
     longitude_range: tuple[float, float]
     latitude_range: tuple[float, float]
+    geographic_crs_path: Path | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,6 +184,14 @@ class ProductConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class BaseTextureConfig:
+    width: int
+    height: int
+    path: str
+    resampling: str
+
+
+@dataclass(frozen=True, slots=True)
 class TextureProject:
     path: Path
     product_id: str
@@ -188,10 +200,17 @@ class TextureProject:
     composite_policy: str
     missing_pixel: int
     product: ProductConfig
+    format_version: int = 1
+    grid: TileGrid | None = None
+    base_texture: BaseTextureConfig | None = None
+
+    @property
+    def projected_bounds(self):
+        return self.grid.projected_bounds if self.grid else self.product.bounds
 
     def semantic_dict(self) -> dict[str, Any]:
-        return {
-            "format_version": FORMAT_VERSION,
+        result = {
+            "format_version": self.format_version,
             "product_id": self.product_id,
             "target": {
                 "id": self.target.id,
@@ -213,6 +232,18 @@ class TextureProject:
             },
             "product": asdict(self.product),
         }
+
+        if self.grid:
+            result["grid"] = {
+                "projection": self.grid.projection,
+                "radius_metres": self.grid.radius_metres,
+            }
+        if self.base_texture:
+            result["base_texture"] = asdict(self.base_texture)
+            result["target"]["geographic_crs"] = (
+                self.target.geographic_crs_path.relative_to(self.path.parent).as_posix()
+            )
+        return result
 
 
 def _reject_unknown(raw: dict[str, Any], allowed: set[str], context: str) -> None:
@@ -386,8 +417,38 @@ def load_project(path: Path) -> TextureProject:
     with resolved.open("rb") as stream:
         raw = tomllib.load(stream)
     _reject_unknown(raw, _PROJECT_KEYS, "project")
-    if raw.get("format_version") != FORMAT_VERSION:
-        raise ValueError(f"project format_version must be {FORMAT_VERSION}")
+    format_version = raw.get("format_version")
+    if format_version not in {1, 2}:
+        raise ValueError("project format_version must be 1 or 2")
+    grid = None
+    base_texture = None
+    if format_version == 1 and ("grid" in raw or "base_texture" in raw):
+        raise ValueError("Explicit grids and base textures require format_version 2")
+    if format_version == 2:
+        grid_raw = _table(raw, "grid", "project")
+        _reject_unknown(grid_raw, {"projection", "radius_metres"}, "[grid]")
+        grid = TileGrid(
+            _string(grid_raw, "projection", "grid"), float(grid_raw["radius_metres"])
+        )
+        base_raw = _table(raw, "base_texture", "project")
+        _reject_unknown(
+            base_raw, {"width", "height", "path", "resampling"}, "[base_texture]"
+        )
+        base_texture = BaseTextureConfig(
+            _integer(base_raw, "width", "base_texture"),
+            _integer(base_raw, "height", "base_texture"),
+            _string(base_raw, "path", "base_texture"),
+            _string(base_raw, "resampling", "base_texture"),
+        )
+        if (
+            base_texture.width <= 0
+            or base_texture.height <= 0
+            or base_texture.path != "base.png"
+            or base_texture.resampling != "average"
+        ):
+            raise ValueError(
+                "Base texture requires positive dimensions, base.png and average resampling"
+            )
 
     target_raw = _table(raw, "target", "project")
     _reject_unknown(target_raw, _TARGET_KEYS, "[target]")
@@ -403,6 +464,15 @@ def load_project(path: Path) -> TextureProject:
     )
     if not crs_path.is_file():
         raise ValueError(f"target.crs does not exist: {crs_path}")
+
+    geographic_crs = None
+    if format_version == 2:
+        geographic_crs = resolved.parent / reject_unportable_path(
+            _string(target_raw, "geographic_crs", "target"),
+            field_name="target.geographic_crs",
+        )
+        if not geographic_crs.is_file():
+            raise ValueError("target.geographic_crs does not exist")
 
     sources_raw = raw.get("sources")
     if not isinstance(sources_raw, list) or not sources_raw:
@@ -491,6 +561,11 @@ def load_project(path: Path) -> TextureProject:
         longitude_range[1],
         latitude_range[1],
     )
+    if grid and any(
+        not math.isclose(a, b, abs_tol=1e-10)
+        for a, b in zip(expected_bounds, grid.geographic_bounds, strict=True)
+    ):
+        raise ValueError("Target bounds do not match the declared tile grid")
     if product.bounds != expected_bounds:
         raise ValueError(
             "product.bounds must match target longitude and latitude ranges"
@@ -498,12 +573,16 @@ def load_project(path: Path) -> TextureProject:
 
     return TextureProject(
         path=resolved,
+        format_version=format_version,
+        grid=grid,
+        base_texture=base_texture,
         product_id=_string(raw, "product_id", "project"),
         target=TargetConfig(
             id=_string(target_raw, "id", "target"),
             crs_path=crs_path,
             longitude_range=longitude_range,
             latitude_range=latitude_range,
+            geographic_crs_path=geographic_crs,
         ),
         sources=tuple(
             sorted(sources, key=lambda source: (-source.priority, source.id))
