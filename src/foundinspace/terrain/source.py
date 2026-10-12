@@ -1,5 +1,6 @@
 import json
 import re
+import threading
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -41,6 +42,7 @@ def inspect_source(path):
 class Source:
     def __init__(self, config, project_directory, radius):
         self.config = config
+        self.read_lock = threading.Lock()
         path = (project_directory / config["file"]).resolve()
         self.spec = json.loads((project_directory / config["spec"]).read_text())
         current = inspect_source(path)
@@ -133,6 +135,12 @@ class Source:
         )
 
     def sample(self, transform, size, crs):
+        # A reader may be shared by bounded tile workers, but GDAL raster handles
+        # must never be used concurrently. Independent sources can run together.
+        with self.read_lock:
+            return self._sample(transform, size, crs)
+
+    def _sample(self, transform, size, crs):
         values = np.full((size, size), np.nan, dtype=np.float64)
         reproject(
             rasterio.band(self.dataset, 1),

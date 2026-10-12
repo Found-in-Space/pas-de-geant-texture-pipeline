@@ -46,9 +46,17 @@ UV_CACHE_DIR=.cache/uv uv run fis-terrain plan .cache/apollo-project/project.tom
 UV_CACHE_DIR=.cache/uv uv run fis-terrain build .cache/apollo-project/project.toml \
   --output .cache/products/moon-apollo-v1
 UV_CACHE_DIR=.cache/uv uv run fis-terrain validate .cache/products/moon-apollo-v1
+UV_CACHE_DIR=.cache/uv uv run python projects/moon/check_apollo.py \
+  --product .cache/products/moon-apollo-v1 --output .cache/apollo-site-checks.json
 ```
 
 The preparation adapter requires the already admitted exact NASA SVS source.
+The build defaults to four tile workers with at most eight queued results.
+GDAL reader access is serialized per input; numeric processing and lossless
+PNG emission can overlap. `--workers 1` provides serial operation. Worker count
+is recorded with the recipe, and tests compare serial/parallel tile bytes and
+manifest order. The independent site check compares prepared pixel centres
+with native Float32 neighbours outside the declared transition.
 It generates a project with explicit paths/conversions, source specifications
 and retained acquisition evidence. Another area can supply its own project and
 specifications directly using `fis-terrain inspect` and `acquire-window`; another

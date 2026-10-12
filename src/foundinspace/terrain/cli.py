@@ -21,6 +21,7 @@ def main():
     creation = commands.add_parser("build")
     creation.add_argument("project", type=Path)
     creation.add_argument("--output", type=Path, required=True)
+    creation.add_argument("--workers", type=int, default=4)
     checking = commands.add_parser("validate")
     checking.add_argument("output", type=Path)
     acquire = commands.add_parser("acquire")
@@ -44,7 +45,7 @@ def main():
         if args.output:
             write_json(args.output, result)
     elif args.command == "build":
-        result = build(args.project, args.output)
+        result = build(args.project, args.output, workers=args.workers)
     elif args.command == "validate":
         result = validate(args.output)
     elif args.command == "acquire":

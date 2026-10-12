@@ -4,6 +4,8 @@ import math
 import platform
 import subprocess
 import tomllib
+from collections import deque
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 from pathlib import Path
 
@@ -162,7 +164,55 @@ def sample_tile(project, sources, address):
     return heights[halo:-halo, halo:-halo], overlap
 
 
-def build(project_path, output):
+def tile_record(project, sources, work, address):
+    z, x, y = address
+    tile = work / "elevation" / str(z) / str(x) / f"{y}.png"
+    report = tile.with_suffix(".json")
+    previous = json.loads(report.read_text()) if report.exists() else None
+    if previous and tile.exists() and digest(tile) == previous["sha256"]:
+        return previous
+    heights, overlap = sample_tile(project, sources, address)
+    rgb = encode_terrarium(heights)
+    tile.parent.mkdir(parents=True, exist_ok=True)
+    temporary = tile.with_suffix(".part")
+    Image.fromarray(rgb).save(temporary, format="PNG")
+    with Image.open(temporary) as emitted:
+        decoded = decode_terrarium(np.array(emitted))
+    error = float(np.max(np.abs(heights - decoded)))
+    if error > 1 / 512 + 1e-8:
+        raise ValueError("Elevation round-trip exceeds quantization error")
+    record = {
+        "address": list(address),
+        "sha256": digest(temporary),
+        "minimumMetres": float(decoded.min()),
+        "maximumMetres": float(decoded.max()),
+        "maximumEncodingErrorMetres": error,
+        "overlap": overlap,
+    }
+    temporary.replace(tile)
+    write_json(report, record)
+    return record
+
+
+def tile_records(project, sources, work, coverage, workers):
+    # Retain at most twice the worker count in futures/results. The manifest
+    # consumes them in deterministic address order, independent of completion.
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        pending = deque()
+        for address in addresses(coverage):
+            pending.append(
+                (address, executor.submit(tile_record, project, sources, work, address))
+            )
+            if len(pending) >= 2 * workers:
+                address, future = pending.popleft()
+                yield address, future.result()
+        for address, future in pending:
+            yield address, future.result()
+
+
+def build(project_path, output, workers=4):
+    if not isinstance(workers, int) or workers <= 0:
+        raise ValueError("Worker count must be a positive integer")
     project_path = Path(project_path).resolve()
     output = Path(output).resolve()
     project = load_project(project_path)
@@ -179,6 +229,7 @@ def build(project_path, output):
             "projectFileSha256": digest(project_path),
             "sources": [source.spec for source in sources],
             "producer": source_code,
+            "workers": workers,
         }
         recipe_identity = identity(recipe)
         work = output.with_name(output.name + ".work")
@@ -197,37 +248,11 @@ def build(project_path, output):
         count, maximum_error, minimum, maximum = 0, 0.0, math.inf, -math.inf
         manifest_path = work / "checksums.sha256"
         with manifest_path.open("w") as manifest:
-            for address in addresses(coverage):
+            for address, record in tile_records(
+                project, sources, work, coverage, workers
+            ):
                 z, x, y = address
                 tile = work / "elevation" / str(z) / str(x) / f"{y}.png"
-                report = tile.with_suffix(".json")
-                # Revalidate retained bytes; interrupted/unrecorded tiles rebuild.
-                previous = json.loads(report.read_text()) if report.exists() else None
-                if previous and tile.exists() and digest(tile) == previous["sha256"]:
-                    record = previous
-                else:
-                    heights, overlap = sample_tile(project, sources, address)
-                    rgb = encode_terrarium(heights)
-                    tile.parent.mkdir(parents=True, exist_ok=True)
-                    temporary = tile.with_suffix(".part")
-                    Image.fromarray(rgb).save(temporary, format="PNG")
-                    with Image.open(temporary) as emitted:
-                        decoded = decode_terrarium(np.array(emitted))
-                    error = float(np.max(np.abs(heights - decoded)))
-                    if error > 1 / 512 + 1e-8:
-                        raise ValueError(
-                            "Elevation round-trip exceeds quantization error"
-                        )
-                    record = {
-                        "address": list(address),
-                        "sha256": digest(temporary),
-                        "minimumMetres": float(decoded.min()),
-                        "maximumMetres": float(decoded.max()),
-                        "maximumEncodingErrorMetres": error,
-                        "overlap": overlap,
-                    }
-                    temporary.replace(tile)
-                    write_json(report, record)
                 manifest.write(
                     f"{record['sha256']}  {tile.relative_to(work).as_posix()}\n"
                 )

@@ -227,3 +227,20 @@ def test_registered_raw_samples_match_independent_bilinear_heights_at_wrap_and_l
                 assert actual[row, column] == pytest.approx(expected, abs=1e-7)
     finally:
         source.close()
+
+
+def test_parallel_emission_matches_serial_pixels_and_manifest_order(tmp_path):
+    rows, columns = np.indices((64, 64))
+    raster(
+        tmp_path,
+        "global.tif",
+        (np.sin(columns / 9) * 100 - rows * 1.17).astype("float32"),
+    )
+    p = project(tmp_path)
+    serial, parallel = tmp_path / "serial", tmp_path / "parallel"
+    build(p, serial, workers=1)
+    build(p, parallel, workers=3)
+    assert (serial / "checksums.sha256").read_bytes() == (
+        parallel / "checksums.sha256"
+    ).read_bytes()
+    assert validate(serial) == validate(parallel)
