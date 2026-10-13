@@ -102,8 +102,14 @@ Géant integration confirm them.
 
 In `pas-de-geant`, separate imagery maximum zoom from elevation maximum zoom
 through configuration, proxy validation, viewer/provider construction, cache
-keys, and fallbacks. Explicitly configure 512-pixel tiles and the one-tile
-level-zero geographic matrix. Keep its local tile builder only for fixtures.
+keys, and fallbacks. Describe existing 512-pixel products and their one-tile
+level-zero geographic matrix accurately for structural and archive checks.
+Their dimensions do not establish Quest runtime acceptance: normal Quest
+display imagery uses 256-pixel tiles across bodies and providers because prior
+physical testing found performance problems with 512-pixel imagery. Prepare
+and validate actual runtime derivatives under new identities; see the
+[Quest consumer decision](tile-contract.md#quest-consumer-performance-decision).
+Keep the application's local tile builder only for fixtures.
 
 Validate the actual WAC product in the viewer at both poles, the antimeridian,
 tile boundaries, and zoom transitions. Once accepted, create a `catalogs`

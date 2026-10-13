@@ -33,6 +33,12 @@ application and of the `catalogs` publication repository.
   look complete.
 - Never stretch or normalise individual tiles independently. Photometric
   transforms and multi-source compositing rules belong to the declared build.
+- Normal Quest display imagery must use 256 × 256 tiles across all bodies and
+  providers. Earlier physical Quest tests found performance problems with
+  512-pixel imagery. Existing 512-pixel contracts and recipes are not Quest
+  runtime acceptance; 512 is an explicit diagnostic choice. Read the Quest
+  consumer note in `docs/tile-contract.md` before preparing runtime imagery.
+  Produce and authenticate real derivatives; never relabel existing payloads.
 - Display tiles must be opaque unless a future contract explicitly introduces
   another product type.
 

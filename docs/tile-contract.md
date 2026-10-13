@@ -8,6 +8,31 @@ This contract is intentionally independent of any particular source or target
 body. Individual products may choose different zoom ranges or colour encodings,
 but deviations must be explicit and supported by the Pas de Géant consumer.
 
+## Quest consumer performance decision
+
+**Normal Quest display imagery uses 256 × 256 tiles across every body and
+provider.** Earlier physical Quest testing found performance problems with
+512-pixel imagery; the owner reconfirmed that finding on 13 October 2026.
+512-pixel imagery is an explicit diagnostic choice. The consumer records the
+rationale and integration gap in
+`pas-de-geant/docs/quest-imagery-tile-size.md`.
+
+The 512-pixel baseline below describes existing producer products and their
+structural contract. It does not establish acceptance for normal Quest use.
+The same distinction applies to the format 2 and prepared Apollo products.
+A successful producer validation proves the declared payload and registration,
+not headset performance. This decision concerns display imagery only;
+scientific elevation has a separate contract.
+
+Prepare a genuine 256-pixel runtime derivative before promoting a product for
+normal Quest use. Review the grid, coverage, zoom caps and metres per pixel:
+reducing dimensions at unchanged zoom reduces sampling resolution. Generate
+new descriptors, identities, manifests and checksums through the build path;
+do not hand-edit existing 512-pixel metadata or relabel payloads. These notes do
+not change recipes, implement a conversion, or claim that a 256-pixel derivative
+has already been built and accepted. Existing immutable products retain their
+original contract.
+
 ## Baseline contract
 
 - Geographic longitude/latitude target grid covering the declared body extent.

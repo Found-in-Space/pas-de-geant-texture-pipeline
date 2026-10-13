@@ -4,6 +4,15 @@ This format 2 recipe produces the Apollo source selection for the shared 3D
 world runtime. It uses the lunar Mercator grid declared in the new global WAC
 recipe. The existing geographic recipe remains the 2D archive comparison input.
 
+**Quest imagery warning:** this recipe declares 512 × 512 tiles. Prior physical
+Quest testing found performance problems with 512-pixel imagery; normal Quest
+sessions use 256 × 256 across bodies and providers. The recipe and its sampling
+table describe the existing 512-pixel candidate, not acceptance for normal
+headset use. Prepare and validate a genuine 256-pixel runtime derivative with
+reviewed source caps and new authenticated identities before promotion. See the
+[consumer performance decision](../../../docs/tile-contract.md#quest-consumer-performance-decision).
+This note changes no recipe or payload; scientific elevation is separate.
+
 The same admitted Kaguya registration and archive metadata are used. GDAL
 reprojects Kaguya into Mercator. NAC regridding samples nonlinear latitude rows
 at target pixel centres; footprint holes retain the complete lower-priority
