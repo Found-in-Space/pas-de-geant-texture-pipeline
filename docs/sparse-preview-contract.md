@@ -4,7 +4,7 @@ The discriminator is `kind = "sparse-detail-preview"` with `formatVersion = 1`.
 It is independent of the opaque display-texture contract. This local prototype
 is consumed by Pas de Géant's imagery study page, not its 3D terrain renderer.
 
-- The global longitude/latitude XYZ grid, lunar sphere and 512 × 512 tile
+- The global longitude/latitude XYZ grid, lunar sphere and 256 × 256 tile
   dimensions match the core imagery grid.
 - Materialized context PNGs have grayscale and alpha channels. Zero alpha is
   missing coverage; valid black terrain has positive alpha.
@@ -73,9 +73,20 @@ native sampling in both directions. See its README for sampling and cost
 tradeoffs. Global, regional, landing and elevation grids must agree before the
 shared runtime admits them. Source selection alone remains Apollo-specific.
 
-The current 2D archive comparison is an explicitly geographic reader. Keep its
-format 1 study product separate from the format 2 3D runtime root. The app's
-`PAS_DE_GEANT_LUNAR_RUNTIME_DIRECTORY` selects the prepared root independently;
-its geographic study base defaults to immutable WAC release `20261011.1` and
-can be configured separately. A Mercator study descriptor is rejected rather
-than drawn at incorrect latitudes. No old payload is relabelled.
+The temporary 2D archive comparison has been removed from Pas de Géant.
+Sparse preview products remain authoring inputs for `prepare-preview-tiles`;
+the 3D viewer consumes the prepared opaque runtime product. Keep format 1
+geographic and format 2 Mercator products on their declared grids. The app's
+`PAS_DE_GEANT_LUNAR_RUNTIME_DIRECTORY` selects the prepared root. No old
+payload is relabelled.
+
+## Matched overlay products
+
+The opt-in [`build-overlay`](matched-overlays.md) producer emits the same
+`sparse-opaque-xyz`, format 2 runtime contract. Its partial source boundary tiles
+contain the pinned base or lower-priority source, so they are fully opaque.
+It adds source-wide brightness fits, shared multiscale blending fields and
+quality exclusions before encoding. The descriptor embeds the recipe, input
+hashes and matching evidence; `matchingReportSha256` authenticates the matching
+report alongside the payload manifest. Existing preview preparation remains
+unchanged. Matched products can use the existing collection command.

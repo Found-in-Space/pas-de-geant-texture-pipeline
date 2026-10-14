@@ -52,12 +52,40 @@ def footprint_mask(polygons, bounds, size=1024, grid=LEGACY_LUNAR_GRID):
     """Sample a MultiPolygon using scanlines, keeping holes and islands."""
     west, south, east, north = bounds
     longitudes, latitudes = grid.pixel_coordinates(bounds, size)
+    row_south, row_north = latitudes.min(), latitudes.max()
     mask = np.zeros((size, size), dtype=bool)
     for polygon in polygons:
         inside = np.zeros_like(mask)
         for ring in polygon:
             points = np.asarray(ring)
             first, second = points[:-1], points[1:]
+            # Only edges spanning a sampled latitude can cross a scanline.
+            # Keep original endpoints (including edges spanning the whole
+            # tile), so intersections and boundary semantics are unchanged.
+            candidates = (np.minimum(first[:, 1], second[:, 1]) <= row_north) & (
+                np.maximum(first[:, 1], second[:, 1]) >= row_south
+            )
+            if not candidates.any():
+                continue
+            first, second = first[candidates], second[candidates]
+            if len(first) <= 32:
+                # A fine tile usually intersects only a few original edges.
+                # Evaluate those crossings together, retaining only bounded
+                # two-dimensional temporary arrays. Counting intersections
+                # at or left of each pixel preserves searchsorted(side=right).
+                latitude = latitudes[:, None]
+                crosses = (first[:, 1] > latitude) != (second[:, 1] > latitude)
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    intersections = first[:, 0] + (
+                        (latitude - first[:, 1])
+                        * (second[:, 0] - first[:, 0])
+                        / (second[:, 1] - first[:, 1])
+                    )
+                for edge in range(len(first)):
+                    inside ^= crosses[:, edge, None] & (
+                        intersections[:, edge, None] <= longitudes[None, :]
+                    )
+                continue
             for row, latitude in enumerate(latitudes):
                 crosses = (first[:, 1] > latitude) != (second[:, 1] > latitude)
                 a, b = first[crosses], second[crosses]
@@ -94,6 +122,14 @@ def build_preview(
         raise ValueError("Preview body and grid radii differ")
     if not (0 <= project["minimum_zoom"] <= project["context_maximum_zoom"]):
         raise ValueError("Invalid context zoom range")
+    tile_size = project["tile_size"]
+    if (
+        not isinstance(tile_size, int)
+        or tile_size <= 0
+        or tile_size > 256
+        or tile_size & (tile_size - 1)
+    ):
+        raise ValueError("Preview tile_size must be a power of two no larger than 256")
     if project["display_dn_range"][0] >= project["display_dn_range"][1]:
         raise ValueError("Display endpoints must increase")
     for directory in (work_root, output_root):

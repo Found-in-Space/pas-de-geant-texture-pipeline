@@ -47,6 +47,62 @@ def cli() -> None:
     """Build controlled planetary display-texture products."""
 
 
+@cli.command("build-overlay")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--source-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--archive-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--reference-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--work-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--maximum-zoom",
+    type=click.IntRange(min=0, max=20),
+    help="Recorded cap for a review build; must reach the calibration zoom.",
+)
+@_command_errors
+def build_overlay_command(
+    project_path,
+    source_root,
+    archive_root,
+    reference_root,
+    work_root,
+    output_root,
+    maximum_zoom,
+):
+    """Match and blend admitted sources against a pinned base tile product."""
+    from .overlay import build_overlay
+
+    _emit(
+        build_overlay(
+            project_path.resolve(),
+            source_root=source_root.resolve(),
+            archive_root=archive_root.resolve(),
+            reference_root=reference_root.resolve(),
+            work_root=work_root.resolve(),
+            output_root=output_root.resolve(),
+            maximum_zoom=maximum_zoom,
+        )
+    )
+
+
 @cli.command("build-preview")
 @click.argument(
     "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
@@ -137,6 +193,26 @@ def validate_preview_tiles_command(output_root: Path) -> None:
     from .preview_tiles import validate_preview_tiles
 
     _emit(validate_preview_tiles(output_root.resolve()))
+
+
+@cli.command("collect-preview-tiles")
+@click.option(
+    "--input",
+    "inputs",
+    multiple=True,
+    required=True,
+    type=(str, click.Path(exists=True, file_okay=False, path_type=Path)),
+    help="Immutable input namespace and product root; repeat for each product.",
+)
+@click.option(
+    "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@_command_errors
+def collect_preview_tiles_command(inputs, output_root: Path) -> None:
+    """Collect matching sparse products on one filesystem and validate all tiles."""
+    from .preview_collection import collect_preview_tiles
+
+    _emit(collect_preview_tiles(list(inputs), output_root))
 
 
 @cli.command("validate-project")

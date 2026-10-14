@@ -1,0 +1,123 @@
+format_version = 1
+kind = "matched-overlay"
+algorithm = "linear-huber-multiscale-v1"
+product_id = "apollo11-matched-overlay-v1"
+tile_size = 256
+minimum_zoom = 8
+target_crs = "../../../resources/crs/moon-mercator-1737400.wkt"
+reference_descriptor_sha256 = "0ede338f5b3acf8b7e50bfa638eaeffed390e094bd4008dc8dd037380038a215"
+admission_descriptor_sha256 = "a080ac71e57b733a99b17561523234f8819b6b1993a08d7c7b61d19ab4e07d34"
+
+[grid]
+projection = "web-mercator"
+radius_metres = 1737400
+
+[matching]
+calibration_zoom = 10
+block_pixels = 12
+contrast_fraction = 0.75
+trim_fraction = 0.02
+maximum_canvas_pixels = 16777216
+
+[[sources]]
+id = "context"
+kind = "raster"
+priority = 0
+credit = "JAXA/SELENE · Kaguya"
+bounds = [21.82413154108924, -0.9747343108404029, 25.12214845891076, 2.3230543108404027]
+maximum_zoom = 13
+blend_metres = 8192
+encoding = "linear"
+scale = 0.001
+offset = 0
+valid_range = [1, 32767]
+nodata = [0]
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E021S03E024SC.img"
+sha256 = "33085c5c573f7a8ced2fe05ef4d8ff455966a7aceea2e7792bb9034c3dd12a60"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon021/data/TCO_MAPs02_N00E021S03E024SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E021S03E024SC.lbl"
+sha256 = "9f5608c767824113e806ef572599c6faafcfa5738dff2bafa16d667a82e64803"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon021/data/TCO_MAPs02_N00E021S03E024SC.lbl"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N03E021N00E024SC.img"
+sha256 = "08b073eda662d971a0189073cbebfba8eb999dfc4f04d8b16e955ec601a9a54f"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon021/data/TCO_MAPs02_N03E021N00E024SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N03E021N00E024SC.lbl"
+sha256 = "b6786eeaa4f2a7f42bf069728b5cfd5e289445b6b680ce1ae1f04e5ddba568e7"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon021/data/TCO_MAPs02_N03E021N00E024SC.lbl"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E024S03E027SC.img"
+sha256 = "6f3ee19a0fc22682b50746233332b9ec5e61af02d21ef8546b48f2b82bc640d1"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon024/data/TCO_MAPs02_N00E024S03E027SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E024S03E027SC.lbl"
+sha256 = "d2325f8502ddf9f1f50647bd7ce3246cdf1330095091ea7a5a7cd1e505afedfa"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon024/data/TCO_MAPs02_N00E024S03E027SC.lbl"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N03E024N00E027SC.img"
+sha256 = "9a5bfc505d665b8d1325e45174ca60865429c6ade181c2af638d83e1a4eb8350"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon024/data/TCO_MAPs02_N03E024N00E027SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N03E024N00E027SC.lbl"
+sha256 = "14b6d9909f2374fac6eb74ea6d7bdc4c1d60bd3d4a744db0b3e6952f59dc17e7"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon024/data/TCO_MAPs02_N03E024N00E027SC.lbl"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_N00E021S03E024SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_N03E021N00E024SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_N00E024S03E027SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_N03E024N00E027SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources]]
+id = "regional"
+kind = "zoomify"
+priority = 100
+credit = "NASA/GSFC/ASU · LROC"
+bounds = [23.06088788527231, 0.2619364222898993, 23.88539211472769, 1.0863835777101007]
+maximum_zoom = 16
+blend_metres = 2048
+metadata = "apollo11-regional.json"
+
+[[sources.inputs]]
+path = "apollo11-regional.json"
+sha256 = "99aa7e129736dbe8d98d219fb033d52b12ebb27e1c34b6f24ce8300908e809ff"
+
+[[sources]]
+id = "landing"
+kind = "zoomify"
+fit_block_pixels = 4
+priority = 200
+credit = "NASA/GSFC/ASU · LROC"
+bounds = [23.390689577054463, 0.5917152844579798, 23.55559042294554, 0.7566047155420201]
+maximum_zoom = 17
+blend_metres = 2048
+metadata = "apollo11-fine.json"
+
+[[sources.inputs]]
+path = "apollo11-fine.json"
+sha256 = "4c7a9ed81ef91a7850b940cbe6d8d9139beb966cd119e48a0a38dd38a40172bb"

@@ -535,8 +535,12 @@ def load_project(path: Path) -> TextureProject:
         raise ValueError("product.kind must be display-texture")
     if product.maximum_zoom < 0 or product.maximum_zoom > 20:
         raise ValueError("product.maximum_zoom must be in 0..20")
-    if product.tile_size <= 0 or product.tile_size & (product.tile_size - 1):
-        raise ValueError("product.tile_size must be a positive power of two")
+    if (
+        product.tile_size <= 0
+        or product.tile_size > 256
+        or product.tile_size & (product.tile_size - 1)
+    ):
+        raise ValueError("product.tile_size must be a power of two no larger than 256")
     if product.reprojection_resampling not in {
         "nearest",
         "bilinear",

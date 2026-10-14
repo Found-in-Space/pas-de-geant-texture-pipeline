@@ -18,7 +18,7 @@ def test_project_resolves_semantic_paths_and_computes_matrix(project_factory) ->
         project.sources[0].acquisition_path
         == project_path.parent / "sources/source.toml"
     )
-    assert project.product.maximum_dimension == 2048
+    assert project.product.maximum_dimension == 1024
     assert project.product.total_tile_count == 21
 
 
@@ -90,11 +90,26 @@ def test_repository_source_is_admitted_with_complete_contract() -> None:
 
 def test_repository_wac_project_fixes_target_grid_with_admitted_source() -> None:
     root = Path(__file__).resolve().parents[1]
-    project = load_project(root / "projects/moon/lroc-wac-global-100m/project.toml")
+    project = load_project(
+        root / "projects/moon/lroc-wac-global-100m-mercator-v2/project.toml"
+    )
 
     assert project.product.maximum_dimension == 131_072
-    assert project.product.total_tile_count == 87_381
+    assert project.product.tile_size == 256
+    assert project.product.total_tile_count == 349_525
     assert project.sources[0].acquisition.status == "admitted"
+
+
+def test_project_rejects_tiles_larger_than_256(project_factory) -> None:
+    project_path, _ = project_factory()
+    project_path.write_text(
+        project_path.read_text(encoding="utf-8").replace(
+            "tile_size = 256", "tile_size = 512"
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="no larger than 256"):
+        load_project(project_path)
 
 
 def test_project_semantic_identity_does_not_include_checkout_path(

@@ -11,8 +11,9 @@ as explicit CLI arguments or a separate ignored run file.
 
 ## Legacy geographic model
 
-Version 1 retains its published geographic interpretation. Existing recipes
-are not rewritten during the Mercator migration.
+Version 1 retains its published geographic interpretation. The example below
+records the historical 512-pixel recipe; the current producer rejects that tile
+size for new builds. New products use 256 pixels or fewer.
 
 ```toml
 format_version = 1
@@ -138,3 +139,12 @@ the original admitted source, rather than from a clipped Mercator tile. Its CRS
 resource hash, dimensions, resampling and payload hash participate in generated
 build/product identity. It is opaque grayscale in the current processor. The
 base and polar display do not represent scientific heights.
+
+## Matched overlay projects
+
+The opt-in `kind = "matched-overlay"`, `format_version = 1` project uses
+source-wide display matching against an authenticated base product. It supports
+admitted single-band rasters and registered archive imagery, fixed calibration
+settings, source priorities, and hash-bound quality masks. Its complete schema,
+algorithm and build instructions are documented in [matched overlays](matched-overlays.md).
+It produces the existing format 2 sparse opaque tile contract.

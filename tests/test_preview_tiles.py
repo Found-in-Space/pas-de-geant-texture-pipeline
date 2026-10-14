@@ -1,4 +1,7 @@
+import io
 import json
+import urllib.error
+from email.message import Message
 
 import numpy as np
 import pytest
@@ -8,12 +11,70 @@ from foundinspace.textures.grid import TileGrid
 from foundinspace.textures.preview_tiles import (
     archive_tiers,
     archive_url,
+    detail_archive_urls,
+    download_archive_tile,
     prepare_preview_tiles,
     regrid_detail,
     sample_parent,
     validate_preview_tiles,
 )
 from foundinspace.textures.util import atomic_write_json, identity_sha256, sha256_file
+
+
+def test_archive_download_retries_timeout_before_writing(tmp_path, monkeypatch):
+    calls = []
+
+    class Response(io.BytesIO):
+        headers = Message()
+        headers["Content-Type"] = "image/jpeg"
+
+    def fetch(url, timeout):
+        calls.append(url)
+        if len(calls) == 1:
+            raise urllib.error.URLError(TimeoutError())
+        return Response(b"complete image response")
+
+    monkeypatch.setattr("urllib.request.urlopen", fetch)
+    monkeypatch.setattr(
+        "foundinspace.textures.preview_tiles.time.sleep", lambda _: None
+    )
+    path = tmp_path / "tile.partial"
+    download_archive_tile("https://example.org/tile.jpg", path)
+    assert len(calls) == 2
+    assert path.read_bytes() == b"complete image response"
+
+
+@pytest.mark.parametrize("code,attempts", [(404, 1), (503, 4)])
+def test_archive_http_retries_are_bounded(tmp_path, monkeypatch, code, attempts):
+    calls = []
+
+    def fetch(url, timeout):
+        calls.append(url)
+        raise urllib.error.HTTPError(url, code, "fixture", {}, None)
+
+    monkeypatch.setattr("urllib.request.urlopen", fetch)
+    monkeypatch.setattr(
+        "foundinspace.textures.preview_tiles.time.sleep", lambda _: None
+    )
+    path = tmp_path / "tile.partial"
+    with pytest.raises(urllib.error.HTTPError):
+        download_archive_tile("https://example.org/tile.jpg", path)
+    assert len(calls) == attempts
+    assert not path.exists()
+
+
+def test_preparation_rejects_512_tiles_before_creating_output(tmp_path):
+    preview = tmp_path / "preview"
+    preview.mkdir()
+    (preview / "product.json").write_text(
+        json.dumps(
+            {"kind": "sparse-detail-preview", "formatVersion": 1, "tileSize": 512}
+        )
+    )
+    output = tmp_path / "output"
+    with pytest.raises(ValueError, match="no larger than 256"):
+        prepare_preview_tiles(preview, tmp_path / "archive", output)
+    assert not output.exists()
 
 
 def test_mercator_archive_rows_sample_latitude_without_stretching(tmp_path):
@@ -59,6 +120,29 @@ def region():
             ]
         ],
     }
+
+
+def test_mercator_batch_contains_every_regridding_request(tmp_path):
+    grid = TileGrid("web-mercator", 1737400)
+    detail = {"bounds": [0, 0, 90, 45], "region": region()}
+    urls = set(detail_archive_urls(detail, 3, 16, grid))
+    assert urls
+    requested = set()
+
+    def acquire(url):
+        requested.add(url)
+        assert url in urls
+        path = tmp_path / url.rsplit("/", 1)[-1]
+        Image.new("L", (4, 4), 123).save(path)
+        return path
+
+    for x in (4, 5):
+        for y in (2, 3):
+            regrid_detail(detail, grid.tile_bounds(3, x, y), 16, acquire, grid=grid)
+    assert requested
+    # Acquisition contains each archive URL only once, despite overlapping
+    # target windows and the interpolation halo.
+    assert len(urls) == len(detail_archive_urls(detail, 3, 16, grid))
 
 
 def test_regrid_keeps_valid_black_and_masked_holes(tmp_path):

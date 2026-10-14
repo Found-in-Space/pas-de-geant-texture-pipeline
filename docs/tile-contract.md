@@ -10,30 +10,25 @@ but deviations must be explicit and supported by the Pas de Géant consumer.
 
 ## Quest consumer performance decision
 
-**Normal Quest display imagery uses 256 × 256 tiles across every body and
-provider.** Earlier physical Quest testing found performance problems with
-512-pixel imagery; the owner reconfirmed that finding on 13 October 2026.
-512-pixel imagery is an explicit diagnostic choice. The consumer records the
-rationale and integration gap in
+**New tile products use square tiles no larger than 256 × 256 across every body
+and provider, including scientific terrain.** Earlier physical Quest testing
+found performance problems with 512-pixel tiles; the owner reconfirmed that
+finding on 13 October 2026. The consumer records the rationale in
 `pas-de-geant/docs/quest-imagery-tile-size.md`.
 
-The 512-pixel baseline below describes existing producer products and their
-structural contract. It does not establish acceptance for normal Quest use.
-The same distinction applies to the format 2 and prepared Apollo products.
+The 512-pixel baseline below describes historical producer products and their
+structural contract. The current producer rejects tile sizes above 256 pixels.
 A successful producer validation proves the declared payload and registration,
-not headset performance. This decision concerns display imagery only;
-scientific elevation has a separate contract.
+not headset performance. Scientific elevation retains its separate numeric
+contract and follows the same tile-size limit.
 
-Prepare a genuine 256-pixel runtime derivative before promoting a product for
-normal Quest use. Review the grid, coverage, zoom caps and metres per pixel:
+Prepare a genuine 256-pixel runtime derivative. Review the grid, coverage, zoom caps and metres per pixel:
 reducing dimensions at unchanged zoom reduces sampling resolution. Generate
 new descriptors, identities, manifests and checksums through the build path;
-do not hand-edit existing 512-pixel metadata or relabel payloads. These notes do
-not change recipes, implement a conversion, or claim that a 256-pixel derivative
-has already been built and accepted. Existing immutable products retain their
-original contract.
+do not hand-edit existing 512-pixel metadata or relabel payloads. Historical
+published products retain their original contract.
 
-## Baseline contract
+## Historical format 1 contract
 
 - Geographic longitude/latitude target grid covering the declared body extent.
 - XYZ addressing: `x` increases eastward and `y` increases southward.

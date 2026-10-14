@@ -23,18 +23,18 @@ At Apollo 11 (0.67416°), approximate sampling in both directions is:
 
 | Source | Declared source m/pixel | Cap | Mercator target m/pixel |
 | --- | ---: | ---: | ---: |
-| Kaguya context, 100 km band | 8.423 | 12 | 5.205 |
-| Regional NAC, 25 km band | 1.3 | 15 | 0.651 |
-| Landing NAC, 5 km band | 0.52 | 16 | 0.325 |
+| Kaguya context, 100 km band | 8.423 | 13 | 5.205 |
+| Regional NAC, 25 km band | 1.3 | 16 | 0.651 |
+| Landing NAC, 5 km band | 0.52 | 17 | 0.325 |
 
-These caps retain the declared source sampling in both directions. Oversampling
+The output uses square 256 × 256 tiles. These caps retain the declared source sampling in both directions. Oversampling
 does not add source detail. They replace the old geographic preview caps only
 in this new recipe, with larger target tile counts to review before acquisition.
 Coverage masks are from coarser supporting rasters; fine illumination seams and
 geometric coverage are not claims of seamlessness or scientific resolution.
 
 Replay using existing authenticated sources and metadata, with new independent
-work/output roots. `build-preview` runs offline; archive acquisition in
+work/output roots on the persistent `/data` volume. `build-preview` runs offline; archive acquisition in
 `prepare-preview-tiles` requires explicit `--allow-download`.
 
 ```sh

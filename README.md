@@ -76,6 +76,13 @@ Run the CLI through the locked environment:
 UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures --help
 ```
 
+`build-overlay` adds opt-in source brightness matching, multiscale boundary
+blending, and explicit quality exclusions against a pinned base tile product.
+See [matched overlays](docs/matched-overlays.md) and the
+[six Apollo recipes](projects/moon/matched-overlays/README.md). It emits the
+existing opaque sparse tile contract and records fitting/validation evidence;
+headset viewing gamma stays in the consumer.
+
 The processor currently delegates raster operations to the system
 `gdalinfo`, `gdalwarp`, `gdal_translate`, and `proj` executables. Their exact
 versions and commands are recorded in evidence and stage state. Preserve the
@@ -89,8 +96,9 @@ payload identity and transfer integrity.
 
 The initial product is documented at
 [`projects/moon/lroc-wac-global-100m/README.md`](projects/moon/lroc-wac-global-100m/README.md).
-It targets opaque 8-bit grayscale PNG tiles at zoom levels 0–8 using a square
-geographic XYZ matrix with 512-pixel tiles.
+Its historical release targets opaque 8-bit grayscale PNG tiles at zoom levels
+0–8 using a square geographic XYZ matrix with 512-pixel tiles. New production
+is capped at 256-pixel square tiles.
 
 Its checked-in source specification is admitted and pins the reviewed object
 identity, raster metadata, and lunar source CRS. `emit-tiles` removes nodata
@@ -105,6 +113,10 @@ prepares matching sparse context/detail for the same 3D runtime. Native sampling
 polar display, source admission and producer/consumer checks are documented in
 those recipes and the tile contract. No scientific elevation processing is
 introduced here.
+
+The [six-site Apollo recipes](projects/moon/APOLLO_IMAGERY.md) add matching
+context and registered NAC detail for Apollo 12, 14, 15, 16 and 17, and collect
+them with the existing Apollo 11 tiles behind one validated runtime descriptor.
 
 ## Licence
 

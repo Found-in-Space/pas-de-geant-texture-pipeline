@@ -1,13 +1,13 @@
 format_version = 2
 kind = "sparse-detail-preview"
-product_id = "apollo11-variable-resolution-mercator-v2"
+product_id = "apollo11-variable-resolution-mercator-256-v1"
 radius_metres = 1737400
 latitude = 0.67416
 longitude = 23.47314
 extent_km = 100
-tile_size = 512
+tile_size = 256
 minimum_zoom = 0
-context_maximum_zoom = 12
+context_maximum_zoom = 13
 context_metres_per_pixel = 8.42315289562
 target_crs = "../../../resources/crs/moon-mercator-1737400.wkt"
 
@@ -34,13 +34,13 @@ url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2
 id = "regional"
 metadata = "apollo11-regional.json"
 extent_km = 25
-maximum_zoom = 15
+maximum_zoom = 16
 priority = 100
 [[detail_sources]]
 id = "landing"
 metadata = "apollo11-fine.json"
 extent_km = 5
-maximum_zoom = 16
+maximum_zoom = 17
 priority = 200
 
 [grid]

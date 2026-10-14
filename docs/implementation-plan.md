@@ -97,6 +97,8 @@ The intended maximum base is 131,072 × 131,072 pixels (zoom 8 with 512-pixel
 tiles) over `[-180, -90, 180, 90]`. The complete zoom 0–8 pyramid contains
 87,381 tiles. These are planned choices until the source inspection and Pas de
 Géant integration confirm them.
+The current 256-pixel Mercator recipe retains the 131,072-pixel maximum raster
+at zoom 9 and emits 349,525 tiles.
 
 ## Phase 5: consumer integration and publication
 
@@ -104,9 +106,9 @@ In `pas-de-geant`, separate imagery maximum zoom from elevation maximum zoom
 through configuration, proxy validation, viewer/provider construction, cache
 keys, and fallbacks. Describe existing 512-pixel products and their one-tile
 level-zero geographic matrix accurately for structural and archive checks.
-Their dimensions do not establish Quest runtime acceptance: normal Quest
-display imagery uses 256-pixel tiles across bodies and providers because prior
-physical testing found performance problems with 512-pixel imagery. Prepare
+Their dimensions do not establish Quest runtime acceptance: new imagery and
+terrain products use at most 256-pixel square tiles because prior physical
+testing found performance problems with 512-pixel tiles. Prepare
 and validate actual runtime derivatives under new identities; see the
 [Quest consumer decision](tile-contract.md#quest-consumer-performance-decision).
 Keep the application's local tile builder only for fixtures.

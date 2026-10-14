@@ -5,16 +5,16 @@ Base, using the 1,737,400 m lunar sphere and the global geographic XYZ grid.
 This uses the separate `sparse-detail-preview` contract. It is scratch evidence,
 not a catalog publication or an opaque format-v1 display-texture product.
 
-The recipe materializes Kaguya context at zooms 0–11 and references two existing
-NAC archive pyramids. The study viewer regrids the NAC imagery on demand, using
-the source masks and declared resolution caps. The fine imagery is not yet a
-self-contained offline PNG payload. Archive access is required for those bands.
+The recipe materializes Kaguya context at zooms 0–12 and references two existing
+NAC archive pyramids. `prepare-preview-tiles` regrids the NAC imagery using the
+source masks and declared resolution caps. Prepare that opaque PNG payload
+before loading it in the 3D viewer; archive access belongs to production.
 
 | Area | Source | Native sampling | Useful grid cap |
 | --- | --- | --- | --- |
-| 100 km square | JAXA Kaguya TC seamless ortho v2 | 8.423 m/pixel | z11 |
-| Inner 25 km square, within its actual footprint | LROC Apollo 11 HIA | 1.3 m/pixel | z14 |
-| Inner 5 km square, within its actual footprint | LROC Apollo 11 LOA | 0.52 m/pixel | z15 |
+| 100 km square | JAXA Kaguya TC seamless ortho v2 | 8.423 m/pixel | z12 |
+| Inner 25 km square, within its actual footprint | LROC Apollo 11 HIA | 1.3 m/pixel | z15 |
+| Inner 5 km square, within its actual footprint | LROC Apollo 11 LOA | 0.52 m/pixel | z16 |
 
 These are authoring bands, not assertions of complete NAC coverage. Source
 holes retain lower-priority imagery. The global WAC layer remains underneath
@@ -24,19 +24,21 @@ applied to the Kaguya layer before averaging; NAC uses the archive browse pixels
 
 ## Replay
 
-Run from this repository root. Source, work and output locations are ignored;
+Run from this repository root. Set `FIS_DATA_ROOT` to the durable data directory
+on the persistent volume. Source, work and output locations are ignored by Git;
 allow approximately 3 GB for the four raw inputs, display intermediates and PNGs.
 The four Kaguya payloads total 933,120,000 bytes. The native NAC mosaics remain
-at the archive; only requested Zoomify JPEG tiles are transferred by the viewer.
+at the archive; preparation transfers only the required Zoomify JPEG tiles.
 
 ```sh
 UV_CACHE_DIR=.cache/uv uv sync
-mkdir -p .cache/apollo11-preview/source
+export GRID_PREVIEW_RUN="$FIS_DATA_ROOT/runs/surfaces/apollo11-geographic-256"
+mkdir -p "$GRID_PREVIEW_RUN/source"
 UV_CACHE_DIR=.cache/uv uv run python - <<'PY'
-import subprocess, tomllib
+import os, subprocess, tomllib
 from pathlib import Path
 recipe = tomllib.loads(Path('projects/moon/apollo11-preview/preview.toml').read_text())
-root = Path('.cache/apollo11-preview/source')
+root = Path(os.environ['GRID_PREVIEW_RUN']) / 'source'
 for source in recipe['context_sources']:
     for suffix in ['lbl', 'img']:
         url = source['url'].removesuffix('.img') + '.' + suffix
@@ -47,10 +49,10 @@ for source in recipe['context_sources']:
 PY
 UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures build-preview \
   projects/moon/apollo11-preview/preview.toml \
-  --source-root .cache/apollo11-preview/source \
+  --source-root "$GRID_PREVIEW_RUN/source" \
   --detail-root ../pas-de-geant/apps/pas-de-geant/src/data \
-  --work-root .cache/apollo11-preview/work \
-  --output-root ../pas-de-geant/.cache/apollo11-preview
+  --work-root "$GRID_PREVIEW_RUN/work" \
+  --output-root "$GRID_PREVIEW_RUN/preview"
 ```
 
 GDAL command-line tools must be installed separately. The source dimensions and
@@ -67,9 +69,9 @@ PNG. `state.json` is complete only after emission finishes. A failed build does
 not retain a complete product manifest. Re-running rebuilds the context; source
 downloads can resume. This preview does not yet reuse completed raster stages.
 
-The consumer is `/moon/compare/` in Pas de Géant. Its default local payload root
-is `.cache/apollo11-preview` in that repository; a server can instead set
-`PAS_DE_GEANT_LUNAR_PREVIEW_DIRECTORY`.
+This product is an authoring intermediate for `prepare-preview-tiles`. The
+temporary `/moon/compare/` consumer has been removed from Pas de Géant. The
+3D viewer consumes the prepared runtime product described below.
 
 ## Prepare tiles for VR
 
@@ -78,17 +80,17 @@ Prepare the archive sources once before launching `/moon/apollo11/`:
 
 ```sh
 UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures prepare-preview-tiles \
-  ../pas-de-geant/.cache/apollo11-preview \
-  --source-root .cache/apollo11-preview/archive-tiles \
-  --output-root ../pas-de-geant/.cache/apollo11-preview/runtime \
+  "$GRID_PREVIEW_RUN/preview" \
+  --source-root "$GRID_PREVIEW_RUN/archive-tiles" \
+  --output-root "$GRID_PREVIEW_RUN/runtime" \
   --allow-download
 UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures validate-preview-tiles \
-  ../pas-de-geant/.cache/apollo11-preview/runtime
+  "$GRID_PREVIEW_RUN/runtime"
 ```
 
 This transfers only the needed archive JPEG tiles, with eight concurrent source
 downloads by default (`--download-concurrency` changes that), then emits sparse
-512-pixel opaque geographic XYZ PNGs. Processing uses one bounded target window
+256-pixel square opaque geographic XYZ PNGs. Processing uses one bounded target window
 at a time. Reserve approximately 1 GB for archive inputs and prepared tiles in
 addition to the context build; the command does not retrieve native NAC mosaics.
 Omit `--allow-download` for an offline replay from the authenticated cache.
@@ -106,12 +108,11 @@ opacity, XYZ addresses and source caps, and writes `validation.json`.
 
 Edit `preview.toml` to change the centre, area, context levels, inner bounds or
 priorities, then rebuild. Select Kaguya input tiles covering the new area and
-generate registered metadata for any new archive source. The current consumer's
-archive proxy admits a fixed source registry; register a new source there before
-using it. Several details can have separate, overlapping footprints. Empty
+generate registered metadata for any new archive source. Several details can
+have separate, overlapping footprints. Empty
 context tiles are omitted; partial tiles use alpha, including real holes.
 
 The current prototype has square authoring bands, independently masked source
 footprints and a fixed Kaguya input encoding. Arbitrary authoring cutlines,
-additional raster families, materialized NAC output, immutable publication,
+additional raster families, immutable publication,
 and seam correction remain future production work.

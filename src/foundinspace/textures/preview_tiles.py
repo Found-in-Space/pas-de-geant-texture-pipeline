@@ -9,8 +9,11 @@ from __future__ import annotations
 import json
 import math
 import subprocess
+import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
+from http.client import IncompleteRead
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +23,32 @@ from PIL import __version__ as pillow_version
 from .grid import LEGACY_LUNAR_GRID, TileGrid
 from .preview import footprint_mask, tile_range
 from .util import atomic_write_json, identity_sha256, sha256_file, utc_now
+
+
+def download_archive_tile(url, temporary):
+    """Retry transient transport failures; never admit partial image bytes."""
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as response:
+                if not response.headers.get_content_type().startswith("image/"):
+                    raise ValueError("Archive response is not an image")
+                temporary.write_bytes(response.read())
+            return
+        except (
+            TimeoutError,
+            ConnectionError,
+            urllib.error.URLError,
+            IncompleteRead,
+        ) as error:
+            if (
+                isinstance(error, urllib.error.HTTPError)
+                and error.code < 500
+                and error.code != 429
+            ):
+                raise
+            if attempt == 3:
+                raise
+            time.sleep(2**attempt)
 
 
 def tile_bounds(z, x, y, grid=LEGACY_LUNAR_GRID):
@@ -44,6 +73,57 @@ def archive_url(region, tiers, level, x, y):
     return f"{region['zoomifyUrl']}/TileGroup{group}/{level}-{x}-{y}.jpg"
 
 
+def archive_window(region, bounds, size, grid=LEGACY_LUNAR_GRID):
+    """Return exactly the bounded archive window used by one target tile."""
+    west, south, east, north = bounds
+    rw, rs, re, rn = region["bounds"]
+    tiers = archive_tiers(region)
+    step_x = (re - rw) / region["width"]
+    step_y = (rn - rs) / region["height"]
+    ratio = (east - west) / size / step_x
+    if grid.projection == "web-mercator":
+        _, latitude = grid.pixel_coordinates(bounds, size)
+        ratio = min(
+            ratio, (min(abs(np.diff(latitude))) if size > 1 else north - south) / step_y
+        )
+    level = max(0, min(len(tiers) - 1, math.ceil(len(tiers) - 1 - math.log2(ratio))))
+    factor = 2 ** (len(tiers) - 1 - level)
+    tile_size = region["tileSize"]
+    sx, sy = step_x * factor, step_y * factor
+    width, height = tiers[level]
+    x0 = max(0, math.floor(((west - rw) / sx - 1) / tile_size))
+    x1 = min(
+        math.ceil(width / tile_size) - 1, math.floor(((east - rw) / sx + 1) / tile_size)
+    )
+    y0 = max(0, math.floor(((rn - north) / sy - 1) / tile_size))
+    y1 = min(
+        math.ceil(height / tile_size) - 1,
+        math.floor(((rn - south) / sy + 1) / tile_size),
+    )
+    return tiers, level, x0, y0, x1, y1
+
+
+def detail_archive_urls(detail, zoom, size, grid=LEGACY_LUNAR_GRID):
+    """Plan a level's bounded source windows before rendering target pixels.
+
+    Includes masked source pixels within the band's rectangle, but never
+    source addresses outside the archive. Window selection is shared with
+    regridding so a Mercator row cannot silently select a different tier.
+    """
+    x0, y0, x1, y1 = tile_range(detail["bounds"], zoom, grid)
+    region = detail["region"]
+    urls = set()
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            tiers, level, ax0, ay0, ax1, ay1 = archive_window(
+                region, tile_bounds(zoom, x, y, grid), size, grid
+            )
+            for ay in range(ay0, ay1 + 1):
+                for ax in range(ax0, ax1 + 1):
+                    urls.add(archive_url(region, tiers, level, ax, ay))
+    return sorted(urls)
+
+
 def regrid_detail(detail, bounds, size, acquire, prefetch=None, grid=LEGACY_LUNAR_GRID):
     """A bounded archive window, sampled onto one target-grid tile."""
     region = detail["region"]
@@ -60,29 +140,13 @@ def regrid_detail(detail, bounds, size, acquire, prefetch=None, grid=LEGACY_LUNA
     )
     if not mask.any():
         return None
-    tiers = archive_tiers(region)
+    tiers, level, x0, y0, x1, y1 = archive_window(region, bounds, size, grid)
     step_x = (re - rw) / region["width"]
     step_y = (rn - rs) / region["height"]
-    ratio = (east - west) / size / step_x
-    if grid.projection == "web-mercator":
-        ratio = min(
-            ratio, (min(abs(np.diff(latitude))) if size > 1 else north - south) / step_y
-        )
-    level = max(0, min(len(tiers) - 1, math.ceil(len(tiers) - 1 - math.log2(ratio))))
     factor = 2 ** (len(tiers) - 1 - level)
     tile_size = region["tileSize"]
     sx, sy = step_x * factor, step_y * factor
     width, height = tiers[level]
-    # Include a source pixel around the target window for bilinear sampling.
-    x0 = max(0, math.floor(((west - rw) / sx - 1) / tile_size))
-    x1 = min(
-        math.ceil(width / tile_size) - 1, math.floor(((east - rw) / sx + 1) / tile_size)
-    )
-    y0 = max(0, math.floor(((rn - north) / sy - 1) / tile_size))
-    y1 = min(
-        math.ceil(height / tile_size) - 1,
-        math.floor(((rn - south) / sy + 1) / tile_size),
-    )
     window = Image.new("L", ((x1 - x0 + 1) * tile_size, (y1 - y0 + 1) * tile_size))
     if prefetch:
         prefetch(
@@ -189,6 +253,13 @@ def validate_preview_tiles(output_root: Path):
         {k: v for k, v in product.items() if k not in {"createdAt", "identity"}}
     ):
         raise ValueError("Product descriptor identity changed")
+    if "matchingReportSha256" in product:
+        matching_path = output_root / "matching.json"
+        if (
+            sha256_file(matching_path) != product["matchingReportSha256"]
+            or json.loads(matching_path.read_text()) != product["matching"]
+        ):
+            raise ValueError("Matching report changed")
     checksum_path = output_root / "checksums.sha256"
     if sha256_file(checksum_path) != product["payloadManifestSha256"]:
         raise ValueError("Payload checksum manifest changed")
@@ -257,6 +328,9 @@ def _prepare_preview_tiles(
         2,
     }:
         raise ValueError("Expected sparse-detail-preview format 1 or 2")
+    size = preview["tileSize"]
+    if not isinstance(size, int) or size <= 0 or size > 256 or size & (size - 1):
+        raise ValueError("Preview tileSize must be a power of two no larger than 256")
     grid = (
         LEGACY_LUNAR_GRID
         if preview["formatVersion"] == 1
@@ -296,10 +370,7 @@ def _prepare_preview_tiles(
                     "Missing archive tile; use --allow-download for acquisition"
                 )
             temporary = path.with_suffix(".partial")
-            with urllib.request.urlopen(url, timeout=60) as response:
-                if not response.headers.get_content_type().startswith("image/"):
-                    raise ValueError("Archive response is not an image")
-                temporary.write_bytes(response.read())
+            download_archive_tile(url, temporary)
             # Decode before admitting the object to the cache.
             with Image.open(temporary) as image:
                 image.verify()
@@ -392,43 +463,8 @@ def _prepare_preview_tiles(
         minimum_zoom = min(address[0] for address in context)
         for z in range(minimum_zoom, detail["maximumZoom"] + 1):
             x0, y0, x1, y1 = tile_range(detail["bounds"], z, grid)
-            if allow_download and grid.projection == "geographic":
-                # Acquire each level's bounded archive window in one batch.
-                # Otherwise adjacent target tiles serialize their few cache
-                # misses despite the configured acquisition concurrency.
-                region = detail["region"]
-                rw, rs, re, rn = region["bounds"]
-                tiers = archive_tiers(region)
-                step_x = (re - rw) / region["width"]
-                step_y = (rn - rs) / region["height"]
-                ratio = 360 / 2**z / size / step_x
-                level = max(
-                    0, min(len(tiers) - 1, math.ceil(len(tiers) - 1 - math.log2(ratio)))
-                )
-                factor = 2 ** (len(tiers) - 1 - level)
-                archive_size = region["tileSize"]
-                width, height = tiers[level]
-                west, _, _, north = tile_bounds(z, x0, y0, grid)
-                _, south, east, _ = tile_bounds(z, x1, y1, grid)
-                ax0 = max(
-                    0, math.floor(((west - rw) / (step_x * factor) - 1) / archive_size)
-                )
-                ax1 = min(
-                    math.ceil(width / archive_size) - 1,
-                    math.floor(((east - rw) / (step_x * factor) + 1) / archive_size),
-                )
-                ay0 = max(
-                    0, math.floor(((rn - north) / (step_y * factor) - 1) / archive_size)
-                )
-                ay1 = min(
-                    math.ceil(height / archive_size) - 1,
-                    math.floor(((rn - south) / (step_y * factor) + 1) / archive_size),
-                )
-                urls = [
-                    archive_url(region, tiers, level, x, y)
-                    for y in range(ay0, ay1 + 1)
-                    for x in range(ax0, ax1 + 1)
-                ]
+            if allow_download:
+                urls = detail_archive_urls(detail, z, size, grid)
                 print(
                     f"{detail['id']} z{z}: acquiring {len(urls)} archive tiles",
                     flush=True,

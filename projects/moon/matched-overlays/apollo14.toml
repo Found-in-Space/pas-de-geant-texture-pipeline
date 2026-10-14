@@ -1,0 +1,108 @@
+format_version = 1
+kind = "matched-overlay"
+algorithm = "linear-huber-multiscale-v1"
+product_id = "apollo14-matched-overlay-v1"
+tile_size = 256
+minimum_zoom = 8
+target_crs = "../../../resources/crs/moon-mercator-1737400.wkt"
+reference_descriptor_sha256 = "0ede338f5b3acf8b7e50bfa638eaeffed390e094bd4008dc8dd037380038a215"
+admission_descriptor_sha256 = "2e0570419a05c8483efc7b47f7413cac71c6620a27d9b9c68ffadc93a315dd1a"
+
+[grid]
+projection = "web-mercator"
+radius_metres = 1737400
+
+[matching]
+calibration_zoom = 10
+block_pixels = 12
+contrast_fraction = 0.75
+trim_fraction = 0.02
+maximum_canvas_pixels = 16777216
+
+[[sources]]
+id = "context"
+kind = "raster"
+priority = 0
+credit = "JAXA/SELENE · Kaguya"
+bounds = [-19.12417824706317, -5.294784310840403, -15.819701752936828, -1.9969956891595972]
+maximum_zoom = 13
+blend_metres = 8192
+encoding = "linear"
+scale = 0.001
+offset = 0
+valid_range = [1, 32767]
+nodata = [0]
+
+[[sources.inputs]]
+path = "TCO_MAPs02_S03E339S06E342SC.img"
+sha256 = "e31065e0d6c35ad2d282198ca8e8932255ae3fbc66cda53a94f25087b11e4151"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon339/data/TCO_MAPs02_S03E339S06E342SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_S03E339S06E342SC.lbl"
+sha256 = "41e81f5c5effab49a183ca5f8d9fbae5f90788d4f6296b8e05173b29470209c6"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon339/data/TCO_MAPs02_S03E339S06E342SC.lbl"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E339S03E342SC.img"
+sha256 = "fdafebd613964e05890fe390b4cd1ea86de3927d100fc225a419267737bcc095"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon339/data/TCO_MAPs02_N00E339S03E342SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E339S03E342SC.lbl"
+sha256 = "dd8e255f3b2f465b79d45bc21c10fcea2ddc401b604f8f4a6d71ee27296f03b9"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon339/data/TCO_MAPs02_N00E339S03E342SC.lbl"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_S03E342S06E345SC.img"
+sha256 = "431edf023827c3c97cb99d8d8e0945615c64d0dc16703a111db9eeaf541ba061"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon342/data/TCO_MAPs02_S03E342S06E345SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_S03E342S06E345SC.lbl"
+sha256 = "27534d3b732f9387ded32fff0e5851b3ee2aed151b84c89bf15d962a5e4ed488"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon342/data/TCO_MAPs02_S03E342S06E345SC.lbl"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E342S03E345SC.img"
+sha256 = "fceba08fb367c7586002ff4a9013bd478ed66bd69201c33c454c3ab4ad55ef50"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon342/data/TCO_MAPs02_N00E342S03E345SC.img"
+
+[[sources.inputs]]
+path = "TCO_MAPs02_N00E342S03E345SC.lbl"
+sha256 = "4c9c1033075fcb39f36cb8e61b1abbbd2ab751b3c7efec0d6ce6fdf9f5f4fbed"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon342/data/TCO_MAPs02_N00E342S03E345SC.lbl"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_S03E339S06E342SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_N00E339S03E342SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_S03E342S06E345SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources.rasters]]
+path = "TCO_MAPs02_N00E342S03E345SC.lbl"
+size = [10800, 10800]
+data_type = "UInt16"
+
+[[sources]]
+id = "regional"
+kind = "zoomify"
+priority = 100
+credit = "NASA/GSFC/ASU · LROC"
+bounds = [-17.88499956176579, -4.058113577710101, -17.05888043823421, -3.2336664222898994]
+maximum_zoom = 15
+blend_metres = 2048
+metadata = "apollo14-regional.json"
+
+[[sources.inputs]]
+path = "apollo14-regional.json"
+sha256 = "e3a68282100d6299418aff19ac2a758da0fda2a4c10699919b3e79e0fe450f3d"

@@ -121,7 +121,7 @@ def test_build_base_records_explicit_crs_and_atomic_output(
         lambda path: (
             _metadata(8, 4)
             if Path(path).name == "source.tif"
-            else _metadata(2048, 2048),
+            else _metadata(1024, 1024),
             CommandResult(("gdalinfo", str(path)), "{}", ""),
         ),
     )
@@ -145,8 +145,8 @@ def test_build_base_records_explicit_crs_and_atomic_output(
     assert command[command.index("-s_srs") + 1].endswith("source.wkt")
     assert command[command.index("-t_srs") + 1].endswith("moon.wkt")
     assert command[command.index("-ts") + 1 : command.index("-ts") + 3] == (
-        "2048",
-        "2048",
+        "1024",
+        "1024",
     )
     assert state["status"] == "complete"
     assert (tmp_path / "work/levels/2.tif").read_bytes() == b"base-raster"
@@ -174,7 +174,7 @@ def test_build_levels_averages_each_level_directly_from_base(
         processing,
         "gdalinfo",
         lambda path: (
-            _metadata(1024, 1024) if len(commands) == 1 else _metadata(512, 512),
+            _metadata(512, 512) if len(commands) == 1 else _metadata(256, 256),
             CommandResult(("gdalinfo", str(path)), "{}", ""),
         ),
     )
@@ -184,8 +184,8 @@ def test_build_levels_averages_each_level_directly_from_base(
 
     assert len(states) == 2
     assert [command[command.index("-outsize") + 1] for command in commands] == [
-        "1024",
         "512",
+        "256",
     ]
     assert all(command[-2] == str(base) for command in commands)
     assert all(command[command.index("-r") + 1] == "average" for command in commands)

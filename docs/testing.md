@@ -34,7 +34,7 @@ Project and source contracts:
 Tile structure:
 
 - exactly `4^z` tiles at level `z` and the declared total count;
-- every PNG decodes to 512 × 512 with the declared bit depth and channels;
+- every new PNG decodes to the declared square size, at most 256 × 256, with the declared bit depth and channels;
 - no alpha channel, palette transparency, or PNG transparency chunk for opaque
   products;
 - path coordinates are in range and no expected coordinate is absent;
@@ -79,7 +79,7 @@ Tests in the application repository should cover:
 
 - imagery zoom 8 while elevation remains independently limited to zoom 5;
 - intended behavior for imagery zoom 9 and elevation zoom 6;
-- 512-pixel tile width and one-tile level-zero matrix;
+- at most 256-pixel square tile dimensions and one-tile level-zero matrix;
 - XYZ orientation and proxy URL construction;
 - proxy operation against a local static tile server;
 - interactive inspection at poles, antimeridian, boundaries, and zoom changes;
@@ -110,3 +110,15 @@ Application tests also exercise real GDAL numeric height encoding, source
 admission, grid/cache incompatibility, mesh elevation UVs, and measured crop
 bounds with both Terrarium and RG16 heights. These checks use only tiny local
 synthetic sources. Full payload and Quest acceptance remain separate steps.
+
+## Matched overlay validation
+
+`test_photometry.py` checks robust gain/offset recovery with outliers, rejection
+of degenerate overlap, unchanged fallback inside holes, invalid-source exclusion
+from blend bands, and globally consistent field sampling across tiles/zooms.
+`test_overlay.py` builds real GDAL float rasters through the complete command path,
+checks repeatable product identity and opaque output, authenticates reference
+tiles and matching reports, and exercises explicit quality-mask fallback.
+All six Apollo recipes are parsed and checked against the calibration budget.
+See [matched overlays](matched-overlays.md) for reduced-zoom review and production
+acceptance boundaries.

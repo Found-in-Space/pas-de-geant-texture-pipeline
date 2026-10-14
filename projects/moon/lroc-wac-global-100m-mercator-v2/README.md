@@ -9,7 +9,7 @@ extent is ±πR in both axes; latitude coverage is ±85.0511287798066°. Longitu
 wraps at ±180°. The reviewed source remains lunar Simple Cylindrical. Each
 pixel samples the projected grid, rather than stretching geographic rows.
 
-The 512-pixel zoom 0–8 pyramid contains 87,381 tiles; the maximum raster is
+The 256-pixel zoom 0–9 pyramid contains 349,525 square tiles; the maximum raster is
 131,072 square (16 GiB of uncompressed grayscale samples). Intermediate levels,
 output PNGs and validation working files need additional disk space. The CLI
 preflight estimates these separately. The separate 2048 × 1024 equirectangular
@@ -17,13 +17,14 @@ preflight estimates these separately. The separate 2048 × 1024 equirectangular
 poles. The consumer uses it for the base and polar caps, with flat reference
 heights beyond Mercator's extent.
 
+Set `FIS_DATA_ROOT` to the durable data directory on the persistent volume.
 Use four distinct run roots outside Git. First inspect the existing source and
 run `preflight` with this recipe; review its recorded disk/tool/input checks
 before a full build. Run commands in order with the same arguments:
 
 ```sh
-export GRID_RUN_ROOT=/absolute/external/new-mercator-run
-export GRID_SOURCE_ROOT=/absolute/external/admitted-wac-source
+export GRID_RUN_ROOT="$FIS_DATA_ROOT/runs/surfaces/moon-wac-256"
+export GRID_SOURCE_ROOT="$FIS_DATA_ROOT/raw/moon/lroc-wac-global-morphology-100m/sha256-87159ead1888ae31bb647e957ec60943022b707ec804cb5353a304575936fd55"
 UV_CACHE_DIR=.cache/uv uv run pas-de-geant-textures preflight \
   projects/moon/lroc-wac-global-100m-mercator-v2/project.toml \
   --source-root "$GRID_SOURCE_ROOT" --work-root "$GRID_RUN_ROOT/work" \

@@ -1,0 +1,40 @@
+format_version = 2
+kind = "sparse-detail-preview"
+product_id = "apollo16-variable-resolution-mercator-256-v1"
+radius_metres = 1737400
+latitude = -8.9734
+longitude = 15.5011
+extent_km = 100
+tile_size = 256
+minimum_zoom = 0
+context_maximum_zoom = 13
+context_metres_per_pixel = 8.42315289562
+target_crs = "../../../resources/crs/moon-mercator-1737400.wkt"
+display_dn_range = [250, 850]
+
+[[context_sources]]
+stem = "TCO_MAPs02_S09E012S12E015SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon012/data/TCO_MAPs02_S09E012S12E015SC.img"
+
+[[context_sources]]
+stem = "TCO_MAPs02_S06E012S09E015SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon012/data/TCO_MAPs02_S06E012S09E015SC.img"
+
+[[context_sources]]
+stem = "TCO_MAPs02_S09E015S12E018SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon015/data/TCO_MAPs02_S09E015S12E018SC.img"
+
+[[context_sources]]
+stem = "TCO_MAPs02_S06E015S09E018SC"
+url = "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-ortho-map-seamless-v2.0/lon015/data/TCO_MAPs02_S06E015S09E018SC.img"
+
+[[detail_sources]]
+id = "regional"
+metadata = "apollo16-regional.json"
+extent_km = 25
+maximum_zoom = 17
+priority = 100
+
+[grid]
+projection = "web-mercator"
+radius_metres = 1737400

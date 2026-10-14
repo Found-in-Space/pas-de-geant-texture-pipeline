@@ -1,5 +1,5 @@
 format_version = 2
-product_id = "moon-lroc-wac-global-morphology-100m-mercator-v2"
+product_id = "moon-lroc-wac-global-morphology-100m-mercator-256-v1"
 
 [target]
 id = "moon"
@@ -20,8 +20,8 @@ missing_pixel = 0
 [product]
 kind = "display-texture"
 bounds = [-180.0, -85.0511287798066, 180.0, 85.0511287798066]
-maximum_zoom = 8
-tile_size = 512
+maximum_zoom = 9
+tile_size = 256
 reprojection_resampling = "bilinear"
 pyramid_resampling = "average"
 pixel_type = "uint8"
