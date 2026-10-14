@@ -1,8 +1,10 @@
-# Terrain pipeline
+# Planetary surfaces: elevation
 
-This repository produces reusable scientific elevation tiles. It owns source
+This independent project within Planetary surfaces produces reusable scientific
+elevation tiles. Run commands from `elevation/`. It owns source
 admission, scalar reprojection/compositing, encoding and numeric validation.
-Applications own rendering; catalogs owns citable publications.
+Reusable runtime packages own loading and rendering; applications compose
+those capabilities. Catalogs owns citable publications.
 
 - Use Python 3.13+, `uv sync`, `uv run`, and `uv run pytest`.
 - Set `UV_CACHE_DIR=.cache/uv` for every uv invocation.

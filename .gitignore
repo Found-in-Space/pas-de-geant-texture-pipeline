@@ -1,0 +1,13 @@
+.cache/
+.coverage
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Large inputs, intermediates, and generated products never belong in Git.
+/downloads/
+/local/
+/output/
+/work/

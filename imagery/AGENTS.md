@@ -1,8 +1,9 @@
 # Agent Instructions
 
-This Found in Space repository produces reproducible display-texture tile sets
-for Pas de Géant. It is intentionally independent of the Pas de Géant
-application and of the `catalogs` publication repository.
+This independent project within Planetary surfaces produces reproducible display
+textures. Run commands from `imagery/`. It is independent of applications,
+runtime packages and the `catalogs` publication repository. Scientific elevation
+lives in `../elevation/` with separate processing and validation contracts.
 
 ## Scope
 
@@ -12,7 +13,7 @@ application and of the `catalogs` publication repository.
 - Produce display imagery with an explicit target CRS, tile scheme, blend
   policy, and validation record.
 - Keep elevation, terrain, height maps, meshes, and scientific topography out
-  of scope. Those products require value-preserving encodings and different
+  of this imagery workflow. Those products require value-preserving encodings and different
   validation contracts.
 - Do not add Pas de Géant runtime or viewer behavior here. The application
   consumes the published tile contract.

@@ -35,7 +35,7 @@ heights have documented errors and artifacts; sample spacing is not accuracy.
 Set `FIS_DATA_ROOT` to the durable data directory on the persistent volume.
 Review free disk, source metadata and source/output roots before acquisition.
 The DTM payload is roughly 1.7 GB. Retained SLDEM row ranges, the global source,
-tile payload and working evidence add several GB. Commands run from this repo:
+tile payload and working evidence add several GB. Commands run from the `elevation/` directory:
 
 ```sh
 UV_CACHE_DIR=.cache/uv uv sync --frozen

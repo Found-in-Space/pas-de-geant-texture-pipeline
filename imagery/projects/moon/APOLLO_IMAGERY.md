@@ -32,7 +32,7 @@ Pas de Géant's `build-apollo-regional-preview-metadata.py`.
 ## Acquisition and production
 
 Set an explicit durable data root, immutable run ID, metadata root and
-validated existing Apollo 11 product root. Run from this repository root:
+validated existing Apollo 11 product root. Run from the `imagery/` directory:
 
 ```sh
 UV_CACHE_DIR=.cache/uv uv run python projects/moon/acquire_imagery.py \

@@ -24,7 +24,7 @@ applied to the Kaguya layer before averaging; NAC uses the archive browse pixels
 
 ## Replay
 
-Run from this repository root. Set `FIS_DATA_ROOT` to the durable data directory
+Run from the `imagery/` directory. Set `FIS_DATA_ROOT` to the durable data directory
 on the persistent volume. Source, work and output locations are ignored by Git;
 allow approximately 3 GB for the four raw inputs, display intermediates and PNGs.
 The four Kaguya payloads total 933,120,000 bytes. The native NAC mosaics remain

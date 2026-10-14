@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.8
+    hooks:
+      - id: ruff-check
+        name: Ruff check imagery
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^imagery/(src|tests|examples)/
+      - id: ruff-format
+        name: Ruff format imagery
+        files: ^imagery/(src|tests|examples)/
+      - id: ruff-check
+        name: Ruff check elevation
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^elevation/(src|tests|examples)/
+      - id: ruff-format
+        name: Ruff format elevation
+        files: ^elevation/(src|tests|examples)/

@@ -113,9 +113,11 @@ product irreproducible.
 - Treat generated payloads as immutable. A changed input or rule produces a new
   product identity rather than mutating a published prefix.
 
-## Deliberate non-goals
+## Imagery workflow non-goals
 
-- Height/elevation tiles, terrain meshes, displacement maps, and normal maps.
+- Height/elevation tiles and scientific topography use the independent
+  [elevation workflow](../../elevation/README.md). Terrain meshes, displacement
+  maps and normal maps are outside this imagery workflow.
 - Runtime tile serving, cache policy, or viewer fallback behavior.
 - `catalogs` publication assembly.
-- A generic GIS toolbox unrelated to Pas de Géant products.
+- A generic GIS toolbox unrelated to planetary surface products.
