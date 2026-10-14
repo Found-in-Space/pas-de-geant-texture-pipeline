@@ -88,9 +88,19 @@ def test_portable_sampling_fixture_is_generated_from_the_producer():
     generated = runpy.run_path(str(root / "scripts/write-grid-contract-fixture.py"))[
         "fixture"
     ]()
-    assert (
-        json.loads((root / "tests/fixtures/surface-grid.json").read_text()) == generated
-    )
+    expected = json.loads((root / "tests/fixtures/surface-grid.json").read_text())
+    generated_cases = generated.pop("cases")
+    expected_cases = expected.pop("cases")
+    assert generated == expected
+    for actual, reference in zip(generated_cases, expected_cases, strict=True):
+        assert actual.keys() == reference.keys()
+        for key, value in reference.items():
+            if key in {"bounds", "longitudeCentres", "latitudeCentres"}:
+                # Native transcendental math can differ in its last bits across
+                # hosts. 1e-12 degrees is below 0.12 micrometres on Earth.
+                assert actual[key] == pytest.approx(value, rel=0, abs=1e-12)
+            else:
+                assert actual[key] == value
 
 
 def test_inverse_projection_does_not_add_rows_at_exact_edges():

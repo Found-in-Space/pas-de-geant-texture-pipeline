@@ -83,6 +83,11 @@ standalone CLI examples passed. The imagery example reconstructs all five
 tiles and its polar base; elevation validates nine tiles with maximum encoding
 error at or below 1/512 metre.
 
+The first GitHub CI run exposed exact floating-point equality in the imported
+grid fixture test. Its coordinate comparisons now allow 1e-12 degrees of
+cross-host rounding, with metadata and addresses still exact. The generated
+fixture, production calculations and product formats are unchanged.
+
 - Independent frozen installs, CLI help and complete test suites for both
   workflows, with native GDAL checks enabled.
 - Small generated examples using each installed CLI, with imagery pixel
