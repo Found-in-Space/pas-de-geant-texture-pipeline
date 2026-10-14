@@ -1,10 +1,34 @@
 # Display-texture tile contract
 
+The local [sparse detail preview](sparse-preview-contract.md) has its own kind
+and version discriminator and uses masks. The opaque baseline below remains the
+production display-texture contract.
+
 This contract is intentionally independent of any particular source or target
 body. Individual products may choose different zoom ranges or colour encodings,
 but deviations must be explicit and supported by the Pas de Géant consumer.
 
-## Baseline contract
+## Quest consumer performance decision
+
+**New tile products use square tiles no larger than 256 × 256 across every body
+and provider, including scientific terrain.** Earlier physical Quest testing
+found performance problems with 512-pixel tiles; the owner reconfirmed that
+finding on 13 October 2026. The consumer records the rationale in
+`pas-de-geant/docs/quest-imagery-tile-size.md`.
+
+The 512-pixel baseline below describes historical producer products and their
+structural contract. The current producer rejects tile sizes above 256 pixels.
+A successful producer validation proves the declared payload and registration,
+not headset performance. Scientific elevation retains its separate numeric
+contract and follows the same tile-size limit.
+
+Prepare a genuine 256-pixel runtime derivative. Review the grid, coverage, zoom caps and metres per pixel:
+reducing dimensions at unchanged zoom reduces sampling resolution. Generate
+new descriptors, identities, manifests and checksums through the build path;
+do not hand-edit existing 512-pixel metadata or relabel payloads. Historical
+published products retain their original contract.
+
+## Historical format 1 contract
 
 - Geographic longitude/latitude target grid covering the declared body extent.
 - XYZ addressing: `x` increases eastward and `y` increases southward.
@@ -69,3 +93,38 @@ This contract is for visual colour/intensity samples. It must not be reused for
 elevation simply because both products can be tiled. Topography requires a
 separate contract for units, vertical datum, numeric precision, nodata,
 interpolation, quantization, range, and potentially mesh continuity.
+
+## Explicit-grid contract (format version 2)
+
+The baseline formulas above describe immutable format 1 geographic products.
+Format 2 retains the square opaque XYZ payload, orientation, window emission
+and direct-from-base pyramid rules, and declares this additional grid identity:
+
+```json
+{"formatVersion": 1, "projection": "web-mercator", "radiusMetres": 1737400}
+```
+
+`grid` is required in `product.json`. For tile `(z, x, y)`, `n = 2^z`:
+
+```text
+longitude(x) = -180 + 360*x/n
+latitude(y)  = atan(sinh(pi*(1 - 2*y/n))) * 180/pi
+```
+
+Sample centres use fractional indices `x + (column + 0.5)/tile_size` and
+`y + (row + 0.5)/tile_size`. There is no extra antimeridian column. GDAL target
+extent is ±πR in metres and the sampled latitude limit is ±85.0511287798066°.
+Using the same addresses does not make geographic and Mercator bytes equivalent.
+
+The output also includes an independently generated full-latitude `base.png`.
+`baseTexture` records `path`, `projection: "equirectangular"`, `width`, `height`
+and `sha256`. Product identity authenticates the base descriptor as well as the
+grid and tile payload. Full validation checks the base against its build and
+reports grid coverage separately from base coverage of the poles.
+
+The shared consumer checks the grid against the body's sphere/equatorial radius
+and any companion elevation source. Mercator zoom 0 is never used as an
+equirectangular base. Its caps use the full-latitude base and zero reference
+height outside the streamed latitude extent. New products need new immutable
+prefixes and cache identities; neither descriptor edits nor filename changes
+constitute reprojection. Existing format 1 releases remain geographic.

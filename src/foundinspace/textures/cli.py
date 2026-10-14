@@ -47,6 +47,174 @@ def cli() -> None:
     """Build controlled planetary display-texture products."""
 
 
+@cli.command("build-overlay")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--source-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--archive-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--reference-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--work-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--maximum-zoom",
+    type=click.IntRange(min=0, max=20),
+    help="Recorded cap for a review build; must reach the calibration zoom.",
+)
+@_command_errors
+def build_overlay_command(
+    project_path,
+    source_root,
+    archive_root,
+    reference_root,
+    work_root,
+    output_root,
+    maximum_zoom,
+):
+    """Match and blend admitted sources against a pinned base tile product."""
+    from .overlay import build_overlay
+
+    _emit(
+        build_overlay(
+            project_path.resolve(),
+            source_root=source_root.resolve(),
+            archive_root=archive_root.resolve(),
+            reference_root=reference_root.resolve(),
+            work_root=work_root.resolve(),
+            output_root=output_root.resolve(),
+            maximum_zoom=maximum_zoom,
+        )
+    )
+
+
+@cli.command("build-preview")
+@click.argument(
+    "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
+@click.option(
+    "--source-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--detail-root",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--work-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@_command_errors
+def build_preview_command(
+    project_path: Path,
+    source_root: Path,
+    detail_root: Path,
+    work_root: Path,
+    output_root: Path,
+) -> None:
+    """Build sparse Kaguya context and reference inner NAC preview pyramids."""
+    from .preview import build_preview
+
+    _emit(
+        build_preview(
+            project_path.resolve(),
+            source_root.resolve(),
+            detail_root.resolve(),
+            work_root.resolve(),
+            output_root.resolve(),
+        )
+    )
+
+
+@cli.command("prepare-preview-tiles")
+@click.argument(
+    "preview_root", type=click.Path(exists=True, file_okay=False, path_type=Path)
+)
+@click.option(
+    "--source-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@click.option(
+    "--allow-download", is_flag=True, help="Acquire missing archive JPEG tiles."
+)
+@click.option(
+    "--download-concurrency", type=click.IntRange(min=1), default=8, show_default=True
+)
+@_command_errors
+def prepare_preview_tiles_command(
+    preview_root: Path,
+    source_root: Path,
+    output_root: Path,
+    allow_download: bool,
+    download_concurrency: int,
+) -> None:
+    """Prepare opaque sparse XYZ tiles for the existing 3D imagery loader."""
+    from .preview_tiles import prepare_preview_tiles
+
+    _emit(
+        prepare_preview_tiles(
+            preview_root.resolve(),
+            source_root.resolve(),
+            output_root.resolve(),
+            allow_download=allow_download,
+            download_concurrency=download_concurrency,
+        )
+    )
+
+
+@cli.command("validate-preview-tiles")
+@click.argument(
+    "output_root", type=click.Path(exists=True, file_okay=False, path_type=Path)
+)
+@_command_errors
+def validate_preview_tiles_command(output_root: Path) -> None:
+    """Authenticate and decode every prepared opaque XYZ preview tile."""
+    from .preview_tiles import validate_preview_tiles
+
+    _emit(validate_preview_tiles(output_root.resolve()))
+
+
+@cli.command("collect-preview-tiles")
+@click.option(
+    "--input",
+    "inputs",
+    multiple=True,
+    required=True,
+    type=(str, click.Path(exists=True, file_okay=False, path_type=Path)),
+    help="Immutable input namespace and product root; repeat for each product.",
+)
+@click.option(
+    "--output-root", required=True, type=click.Path(file_okay=False, path_type=Path)
+)
+@_command_errors
+def collect_preview_tiles_command(inputs, output_root: Path) -> None:
+    """Collect matching sparse products on one filesystem and validate all tiles."""
+    from .preview_collection import collect_preview_tiles
+
+    _emit(collect_preview_tiles(list(inputs), output_root))
+
+
 @cli.command("validate-project")
 @click.argument(
     "project_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)

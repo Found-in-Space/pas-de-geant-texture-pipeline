@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pytest
+from PIL import Image
 
 from foundinspace.textures.processing import build_base, build_levels
 from foundinspace.textures.project import load_project
@@ -36,7 +39,10 @@ def test_reviewed_moon_crs_validates_with_system_gdal() -> None:
     assert "Validate Succeeds" in result.stdout
 
 
-def test_small_real_gdal_base_and_direct_pyramid(tmp_path: Path) -> None:
+@pytest.mark.parametrize("format_version", [1, 2])
+def test_small_real_gdal_base_and_direct_pyramid(
+    tmp_path: Path, format_version: int
+) -> None:
     repository = Path(__file__).resolve().parents[1]
     definition = tmp_path / "definition"
     source_specs = definition / "sources"
@@ -46,7 +52,12 @@ def test_small_real_gdal_base_and_direct_pyramid(tmp_path: Path) -> None:
     crs_dir.mkdir()
     source_root.mkdir()
     target_crs = crs_dir / "moon.wkt"
+    projection = "geographic" if format_version == 1 else "mercator"
     target_crs.write_text(
+        (repository / f"resources/crs/moon-{projection}-1737400.wkt").read_text(),
+        encoding="utf-8",
+    )
+    (crs_dir / "geographic.wkt").write_text(
         (repository / "resources/crs/moon-geographic-1737400.wkt").read_text(),
         encoding="utf-8",
     )
@@ -81,6 +92,29 @@ def test_small_real_gdal_base_and_direct_pyramid(tmp_path: Path) -> None:
             str(source),
         )
     )
+    if format_version == 2:
+        # Known geographic gradients exercise nonlinear GDAL sampling, rather
+        # than only checking the metadata of a constant reprojection.
+        pixels = 20 + np.arange(16)[:, None] * 8 + np.arange(32)[None, :] * 2
+        png = source_root / "gradient.png"
+        Image.fromarray(pixels.astype(np.uint8)).save(png)
+        half = math.pi * 1737400
+        run_command(
+            (
+                "gdal_translate",
+                "-of",
+                "GTiff",
+                "-a_srs",
+                str(source_crs),
+                "-a_ullr",
+                str(-half),
+                str(half / 2),
+                str(half),
+                str(-half / 2),
+                str(png),
+                str(source),
+            )
+        )
     metadata, _ = gdalinfo(source)
     expected = {
         "size_bytes": source.stat().st_size,
@@ -149,6 +183,20 @@ path_template = "imagery/{z}/{x}/{y}.png"
 """.lstrip(),
         encoding="utf-8",
     )
+    if format_version == 2:
+        text = project_path.read_text().replace(
+            "format_version = 1", "format_version = 2", 1
+        )
+        text = text.replace(
+            'crs = "crs/moon.wkt"',
+            'crs = "crs/moon.wkt"\ngeographic_crs = "crs/geographic.wkt"',
+        )
+        text = text.replace("-90.0", "-85.0511287798066").replace(
+            "90.0", "85.0511287798066"
+        )
+        text += '\n[grid]\nprojection = "web-mercator"\nradius_metres = 1737400\n'
+        text += '\n[base_texture]\nwidth = 32\nheight = 16\npath = "base.png"\nresampling = "average"\n'
+        project_path.write_text(text)
     project = load_project(project_path)
     work_root = tmp_path / "work"
     output_root = tmp_path / "output"
@@ -175,3 +223,42 @@ path_template = "imagery/{z}/{x}/{y}.png"
     assert validation["tile_count"] == 5
     assert validation["checks"]["every_level_reconstructs_exactly"] is True
     assert len(list((output_root / "imagery").rglob("*.png"))) == 5
+    if format_version == 2:
+        descriptor = json.loads((output_root / "product.json").read_text())
+        assert descriptor["grid"] == project.grid.metadata()
+        assert base_metadata["geoTransform"] == pytest.approx(
+            [
+                -math.pi * 1737400,
+                2 * math.pi * 1737400 / 32,
+                0,
+                math.pi * 1737400,
+                0,
+                -2 * math.pi * 1737400 / 32,
+            ]
+        )
+        with Image.open(output_root / "base.png") as image:
+            assert image.size == (32, 16)
+            # The independent base retains polar rows outside Mercator coverage.
+            assert image.getpixel((16, 0)) == 52
+            assert image.getpixel((16, 15)) == 172
+        pgm = work_root / "level.pgm"
+        run_command(
+            ("gdal_translate", "-of", "PNM", str(work_root / "levels/1.tif"), str(pgm))
+        )
+        _, latitude = project.grid.pixel_coordinates(project.grid.geographic_bounds, 32)
+        expected_y = np.clip((90 - latitude) / 180 * 16 - 0.5, 0, 15)
+        expected_pixels = 20 + expected_y[:, None] * 8 + np.arange(32)[None, :] * 2
+        with Image.open(pgm) as image:
+            assert np.asarray(image) == pytest.approx(expected_pixels, abs=1)
+        assert validation["grid"] == descriptor["grid"]
+        assert validation["checks"]["base_texture_covers_poles"] is True
+        (output_root / "base.png").write_bytes(b"changed")
+        from foundinspace.textures.processing import ProcessingError
+
+        with pytest.raises(ProcessingError, match="checksum changed"):
+            validate_tiles(
+                project,
+                work_root=work_root,
+                output_root=output_root,
+                evidence_root=evidence_root,
+            )

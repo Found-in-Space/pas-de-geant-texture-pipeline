@@ -405,6 +405,23 @@ def emit_tiles(
                 for item in level_outputs
             ]
         )
+        base_texture = None
+        if project.base_texture:
+            config = project.base_texture
+            base = work_root / config.path
+            with Image.open(base) as image:
+                if image.mode != "L" or image.size != (config.width, config.height):
+                    raise ProcessingError(
+                        "Base texture dimensions or grayscale encoding changed"
+                    )
+            shutil.copyfile(base, staging / config.path)
+            base_texture = {
+                "path": config.path,
+                "projection": "equirectangular",
+                "width": config.width,
+                "height": config.height,
+                "sha256": sha256_file(base),
+            }
         product_identity = identity_sha256(
             {
                 "project": project.semantic_dict(),
@@ -415,10 +432,11 @@ def emit_tiles(
                 "producer": producer,
                 "tools": versions,
                 "manifest_set_sha256": manifest_set_sha256,
+                **({"base_texture": base_texture} if base_texture else {}),
             }
         )
         product = {
-            "format_version": 1,
+            "format_version": project.format_version,
             "product_id": project.product_id,
             "product_identity_sha256": product_identity,
             "created_at": utc_now(),
@@ -478,6 +496,9 @@ def emit_tiles(
             "producer": producer,
             "tools": versions,
         }
+        if project.grid:
+            product["grid"] = project.grid.metadata()
+            product["baseTexture"] = base_texture
         product_path = staging / "product.json"
         atomic_write_json(product_path, product)
         shutil.rmtree(staging / ".state")
@@ -735,6 +756,10 @@ def validate_tiles(
         "producer": producer_identity(),
         "tools": tool_versions(),
     }
+    if project.base_texture:
+        identity["base_texture_sha256"] = sha256_file(
+            output_root / project.base_texture.path
+        )
     identity_hash = identity_sha256(identity)
     state_path = work_root / "state" / "validate-tiles.json"
     prior = _read_json(state_path)
@@ -763,6 +788,27 @@ def validate_tiles(
     atomic_write_json(state_path, state)
     started = time.monotonic()
     try:
+        if product.get("format_version") != project.format_version:
+            raise ProcessingError("Product format version does not match its project")
+        if project.grid:
+            if product.get("grid") != project.grid.metadata():
+                raise ProcessingError("Product grid does not match its project")
+            base = product.get("baseTexture", {})
+            config = project.base_texture
+            path = output_root / config.path
+            if (
+                base.get("projection") != "equirectangular"
+                or base.get("path") != config.path
+                or base.get("width") != config.width
+                or base.get("height") != config.height
+                or base.get("sha256") != sha256_file(path)
+            ):
+                raise ProcessingError("Base texture metadata or checksum changed")
+            if sha256_file(path) != sha256_file(work_root / config.path):
+                raise ProcessingError("Base texture differs from its recorded build")
+            with Image.open(path) as image:
+                if image.mode != "L" or image.size != (config.width, config.height):
+                    raise ProcessingError("Base texture dimensions or encoding changed")
         product_levels_raw = product.get("levels")
         if not isinstance(product_levels_raw, list):
             raise ProcessingError("product metadata levels must be a list")
@@ -826,6 +872,12 @@ def validate_tiles(
             "producer": identity["producer"],
             "tools": identity["tools"],
         }
+        if project.grid:
+            report["grid"] = project.grid.metadata()
+            report["baseTexture"] = product["baseTexture"]
+            report["checks"].pop("poles_antimeridian_and_adjacent_edges_covered")
+            report["checks"]["grid_antimeridian_and_adjacent_edges_covered"] = True
+            report["checks"]["base_texture_covers_poles"] = True
         atomic_write_json(report_path, report)
         state.update(
             status="complete",

@@ -33,6 +33,11 @@ application and of the `catalogs` publication repository.
   look complete.
 - Never stretch or normalise individual tiles independently. Photometric
   transforms and multi-source compositing rules belong to the declared build.
+- New tile products must use square tiles no larger than 256 × 256 across all
+  bodies and providers, including imagery previews and terrain. Earlier Quest
+  tests found performance problems with 512-pixel tiles. Existing 512-pixel
+  payloads are historical, not runtime acceptance. Produce and authenticate
+  new derivatives; never relabel existing payloads.
 - Display tiles must be opaque unless a future contract explicitly introduces
   another product type.
 

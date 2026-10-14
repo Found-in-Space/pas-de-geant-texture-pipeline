@@ -1,0 +1,8 @@
+PROJCS["Moon spherical Mercator (1737400 m)",
+    GEOGCS["Moon geographic (sphere, 1737400 m)",
+        DATUM["Moon spherical datum",SPHEROID["Moon sphere",1737400,0]],
+        PRIMEM["Reference meridian",0],UNIT["degree",0.0174532925199433]],
+    PROJECTION["Mercator_1SP"],
+    PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],
+    PARAMETER["false_easting",0],PARAMETER["false_northing",0],
+    UNIT["metre",1],AXIS["Easting",EAST],AXIS["Northing",NORTH]]

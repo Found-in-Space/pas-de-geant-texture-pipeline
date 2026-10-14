@@ -15,7 +15,7 @@ def test_validate_project_cli_reports_product_contract(project_factory) -> None:
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
     assert payload == {
-        "maximum_dimension": 2048,
+        "maximum_dimension": 1024,
         "product_id": "synthetic-v1",
         "sources": ["source-a"],
         "tile_count": 21,
