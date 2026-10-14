@@ -20,8 +20,8 @@ Source hierarchy, from fallback to detail:
    nodata masks and metre heights. Apollo 11/12/14/15/16 use 2 m sample spacing;
    Apollo 17 uses the 5 m valley mosaic. Preserve labels and README evidence.
 
-The global fallback reaches zoom 6. Context reaches zoom 9; 2 m DTM footprints
-reach zoom 14, and the 5 m mosaic reaches zoom 12. These caps retain native
+The square 256-pixel global fallback reaches zoom 7. Context reaches zoom 10; 2 m DTM footprints
+reach zoom 15, and the 5 m mosaic reaches zoom 13. These caps retain native
 sampling in both projected axes. They do not describe independent measurements
 at every output pixel. The same scalar layers supply coarse and fine tiles.
 
@@ -32,6 +32,7 @@ there is no estimated vertical correction or height exaggeration. Confidence
 maps are not used as rejection masks in this initial example. Stereo-derived
 heights have documented errors and artifacts; sample spacing is not accuracy.
 
+Set `FIS_DATA_ROOT` to the durable data directory on the persistent volume.
 Review free disk, source metadata and source/output roots before acquisition.
 The DTM payload is roughly 1.7 GB. Retained SLDEM row ranges, the global source,
 tile payload and working evidence add several GB. Commands run from this repo:
@@ -41,13 +42,14 @@ UV_CACHE_DIR=.cache/uv uv sync --frozen
 UV_CACHE_DIR=.cache/uv uv run python projects/moon/acquire_apollo.py --discover-only
 UV_CACHE_DIR=.cache/uv uv run python projects/moon/acquire_apollo.py
 UV_CACHE_DIR=.cache/uv uv run python projects/moon/prepare_apollo.py \
-  --global-source /path/to/admitted/ldem_64_uint.tif
-UV_CACHE_DIR=.cache/uv uv run fis-terrain plan .cache/apollo-project/project.toml
-UV_CACHE_DIR=.cache/uv uv run fis-terrain build .cache/apollo-project/project.toml \
-  --output .cache/products/moon-apollo-v1
-UV_CACHE_DIR=.cache/uv uv run fis-terrain validate .cache/products/moon-apollo-v1
+  --global-source /path/to/admitted/ldem_64_uint.tif \
+  --project "$FIS_DATA_ROOT/runs/surfaces/moon-apollo-256/project.toml"
+UV_CACHE_DIR=.cache/uv uv run fis-terrain plan "$FIS_DATA_ROOT/runs/surfaces/moon-apollo-256/project.toml"
+UV_CACHE_DIR=.cache/uv uv run fis-terrain build "$FIS_DATA_ROOT/runs/surfaces/moon-apollo-256/project.toml" \
+  --output "$FIS_DATA_ROOT/runs/surfaces/moon-apollo-256/output"
+UV_CACHE_DIR=.cache/uv uv run fis-terrain validate "$FIS_DATA_ROOT/runs/surfaces/moon-apollo-256/output"
 UV_CACHE_DIR=.cache/uv uv run python projects/moon/check_apollo.py \
-  --product .cache/products/moon-apollo-v1 --output .cache/apollo-site-checks.json
+  --product "$FIS_DATA_ROOT/runs/surfaces/moon-apollo-256/output" --output "$FIS_DATA_ROOT/runs/surfaces/moon-apollo-256/apollo-site-checks.json"
 ```
 
 The preparation adapter requires the already admitted exact NASA SVS source.

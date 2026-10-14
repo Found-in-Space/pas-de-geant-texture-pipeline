@@ -12,6 +12,8 @@ Applications own rendering; catalogs owns citable publications.
   in project files. Reject mismatches; keep generated evidence machine-produced.
 - Process rasters in bounded windows. Keep raw data, tiles, work state and local
   paths outside Git. Complete builds publish descriptors atomically, last.
+- New terrain products use square tiles no larger than 256 × 256 pixels and
+  keep generated tile trees on persistent storage.
 - Read README.md and docs/contracts.md before editing production code.
 - Do not deploy, upload or create a catalog release from an exploratory dirty
   checkout. Record such products as scratch and preserve that status.

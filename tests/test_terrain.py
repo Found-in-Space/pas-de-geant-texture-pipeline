@@ -172,6 +172,13 @@ def test_sparse_ranges_are_complete_deduplicated_and_xyz_oriented(tmp_path):
     assert len(tiles) == len(set(tiles)) == 9
 
 
+def test_project_rejects_tiles_larger_than_256(tmp_path):
+    path = project(tmp_path)
+    path.write_text(path.read_text().replace("tile_size = 16", "tile_size = 512"))
+    with pytest.raises(ValueError, match="no larger than 256"):
+        load_project(path)
+
+
 def test_descriptor_semantics_are_authenticated(tmp_path):
     raster(tmp_path, "global.tif", np.ones((32, 32), dtype="float32"))
     output = tmp_path / "tiles"

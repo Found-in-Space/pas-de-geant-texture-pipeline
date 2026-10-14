@@ -6,6 +6,9 @@ project file. Source admission checks band count/type, dimensions, transform,
 CRS, nodata and band scale/offset. Explicit conversion to metres and reference
 radius are mandatory. Embedded georeferencing is used; a source without it
 requires declared registration. No Earth CRS is assigned to another body.
+New terrain products emit square tiles no larger than 256 × 256 pixels. Raising
+the zoom cap by one when changing from 512 to 256 preserves the finest ground
+sampling while reducing each tile's geographic footprint.
 Native rotated rasters use conservative bounds from all four corners. Float
 NaN nodata is represented explicitly in JSON specifications and remains masked
 during scalar sampling. Heights require real scalar bands. Unregistered inputs

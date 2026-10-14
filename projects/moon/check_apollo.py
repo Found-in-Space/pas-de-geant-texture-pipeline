@@ -36,7 +36,7 @@ def main():
     radius, pixels = descriptor["grid"]["radiusMetres"], descriptor["tileSize"]
     geographic = f"+proj=longlat +R={radius} +no_defs"
     for mission, (latitude, longitude) in SITES.items():
-        z = 12 if mission == 17 else 14
+        z = 13 if mission == 17 else 15
         n = 2**z
         cx = (longitude + 180) / 360 * n * pixels
         cy = (

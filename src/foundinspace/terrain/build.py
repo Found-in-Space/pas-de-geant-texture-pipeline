@@ -36,8 +36,12 @@ def load_project(path):
             or project[key] <= 0
         ):
             raise ValueError(f"Invalid {key}")
-    if not isinstance(project["tile_size"], int):
-        raise ValueError("Tile size must be an integer")
+    if (
+        not isinstance(project["tile_size"], int)
+        or project["tile_size"] > 256
+        or project["tile_size"] & (project["tile_size"] - 1)
+    ):
+        raise ValueError("Tile size must be a power of two no larger than 256")
     if (
         not isinstance(project["global_maximum_zoom"], int)
         or project["global_maximum_zoom"] < 0

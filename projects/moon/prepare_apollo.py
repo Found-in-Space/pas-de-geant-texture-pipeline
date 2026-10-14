@@ -209,11 +209,11 @@ def main():
     ).as_posix()
     lines = [
         "format_version = 1",
-        'product_id = "moon-apollo-terrain-v1"',
+        'product_id = "moon-apollo-terrain-256-v1"',
         'target = "moon"',
         f"radius_metres = {RADIUS}",
-        "tile_size = 512",
-        "global_maximum_zoom = 6",
+        "tile_size = 256",
+        "global_maximum_zoom = 7",
         'attribution = "NASA/GSFC/MIT LOLA; JAXA/SELENE; NASA/GSFC/Arizona State University LROC"',
         "[grid]",
         'projection = "web-mercator"',
@@ -232,7 +232,7 @@ def main():
             ]
         )
     for bounds, zoom in details:
-        lines.extend(["[[details]]", f"bounds = {bounds}", f"maximum_zoom = {zoom}"])
+        lines.extend(["[[details]]", f"bounds = {bounds}", f"maximum_zoom = {zoom + 1}"])
     args.project.write_text("\n".join(lines) + "\n")
     print(f"Prepared controlled scratch project: {args.project}", flush=True)
 
