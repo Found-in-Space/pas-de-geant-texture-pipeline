@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "found-in-space-terrain-pipeline"
+version = "0.1.0"
+description = "Controlled, reusable planetary elevation tile production"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = ["affine>=3", "numpy>=2.2", "pillow>=11", "rasterio>=1.5.2", "scipy>=1.15"]
+
+[project.scripts]
+fis-terrain = "foundinspace.terrain.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/foundinspace"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.15"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
